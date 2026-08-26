@@ -1,0 +1,92 @@
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f7f5f0;
+    color: #1c2630;
+  }
+  
+  nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 40px;
+    background: rgb(239, 255, 253);
+    border-bottom: 1px solid #ddd;
+  }
+
+
+.brand {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.navbar a {
+  text-decoration: none;
+  color: #1c2630;
+}
+
+.register-btn {
+  padding: 10px 18px;
+  background: #1a6b6e;
+  color: white !important;
+  border-radius: 24px;
+}
+  
+  nav div {
+    display: flex;
+    gap: 36px;
+  }
+  
+  nav a {
+    text-decoration: none;
+    color: #1c2630;
+  }
+  
+  .hero {
+    min-height: 420px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 60px;
+    background: #1a6b6e;
+    color: white;
+  }
+  
+  .hero h1 {
+    font-size: 56px;
+    margin-bottom: 10px;
+  }
+  
+  .hero p {
+    font-size: 24px;
+  }
+  
+  .hero a {
+    margin-top: 20px;
+    width: fit-content;
+    padding: 12px 22px;
+    background: #c49a5c;
+    color: white;
+    text-decoration: none;
+    border-radius: 30px;
+  }
+
+  @media (max-width: 768px) {
+    .navbar {
+      padding: 16px 20px;
+    }
+  
+    .nav-links {
+      gap: 12px;
+    }
+  
+    .nav-links a {
+      font-size: 14px;
+    }
+  }

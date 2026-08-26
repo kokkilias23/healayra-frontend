@@ -48,34 +48,6 @@ body {
     color: #1c2630;
   }
   
-  .hero {
-    min-height: 420px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding: 60px;
-    background: #1a6b6e;
-    color: white;
-  }
-  
-  .hero h1 {
-    font-size: 56px;
-    margin-bottom: 10px;
-  }
-  
-  .hero p {
-    font-size: 24px;
-  }
-  
-  .hero a {
-    margin-top: 20px;
-    width: fit-content;
-    padding: 12px 22px;
-    background: #c49a5c;
-    color: white;
-    text-decoration: none;
-    border-radius: 30px;
-  }
 
   @media (max-width: 768px) {
     .navbar {

@@ -7,8 +7,8 @@ import Booking from './pages/Booking'
 import DoctorDashboard from './pages/DoctorDashboard'
 import Login from './pages/Login'
 import MyAppointments from './pages/MyAppointments'
-import Patients from './pages/Patients'
-import PatientsDetails from './pages/PatientDetails'
+import Clients from './pages/TherapyClient'
+import ClientsDetails from './pages/ClientDetails'
 import Register from './pages/Register'
 
 function App() {
@@ -22,8 +22,8 @@ function App() {
         <Route path="/my-appointments" element={<MyAppointments />} />
 
         <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
-        <Route path="/doctor/patients" element={<Patients />} />
-        <Route path="/doctor/patients/:id" element={<PatientsDetails />} />
+        <Route path="/doctor/patients" element={<Clients />} />
+        <Route path="/doctor/clients/:id" element={<ClientsDetails />} />
         <Route path="/doctor/availability" element={<Availability />} />
       </Routes>
     </BrowserRouter>

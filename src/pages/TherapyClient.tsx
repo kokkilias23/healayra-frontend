@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
-import '../styles/Patients.css'
+import '../styles/Clients.css'
 
-type Patient = {
+type Client = {
   id: number
   fullName: string
   email: string
@@ -9,7 +9,7 @@ type Patient = {
   lastVisit: string
 }
 
-const patients: Patient[] = [
+const clients: Client[] = [
   {
     id: 1,
     fullName: 'Μαρία Παπαδοπούλου',
@@ -33,41 +33,41 @@ const patients: Patient[] = [
   },
 ]
 
-export default function Patients() {
+export default function Clients() {
   return (
-    <section className="patients-page">
-      <div className="patients-header">
+    <section className="clients-page">
+      <div className="clients-header">
         <div>
           <h1>Θεραπευόμενοι</h1>
           <p>Διαχείριση και προβολή ιστορικού θεραπευόμενων.</p>
         </div>
       </div>
 
-      <div className="patients-list">
-        {patients.map((patient) => (
+      <div className="clients-list">
+        {clients.map((client) => (
           <article
-            key={patient.id}
-            className="patient-card"
+            key={client.id}
+            className="client-card"
           >
-            <div className="patient-info">
-              <h2>{patient.fullName}</h2>
+            <div className="client-info">
+              <h2>{client.fullName}</h2>
 
               <p>
-                <strong>Email:</strong> {patient.email}
+                <strong>Email:</strong> {client.email}
               </p>
 
               <p>
-                <strong>Τηλέφωνο:</strong> {patient.phone}
+                <strong>Τηλέφωνο:</strong> {client.phone}
               </p>
 
               <p>
-                <strong>Τελευταία επίσκεψη:</strong> {patient.lastVisit}
+                <strong>Τελευταία επίσκεψη:</strong> {client.lastVisit}
               </p>
             </div>
 
             <Link
-              to={`/doctor/patients/${patient.id}`}
-              className="patient-details-link"
+              to={`/doctor/clients/${client.id}`}
+              className="client-details-link"
             >
               Προβολή Ιστορικού
             </Link>

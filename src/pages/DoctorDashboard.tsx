@@ -2,7 +2,7 @@ import '../styles/DoctorDashboard.css'
 
 type DashboardAppointment = {
   id: number
-  patientName: string
+  clientName: string
   time: string
   service: string
   status: 'UPCOMING' | 'COMPLETED' | 'CANCELLED'
@@ -11,21 +11,21 @@ type DashboardAppointment = {
 const todayAppointments: DashboardAppointment[] = [
   {
     id: 1,
-    patientName: 'Μαρία Παπαδοπούλου',
+    clientName: 'Μαρία Παπαδοπούλου',
     time: '10:00',
     service: 'Ατομική Συνεδρία',
     status: 'UPCOMING',
   },
   {
     id: 2,
-    patientName: 'Νίκος Δημητρίου',
+    clientName: 'Νίκος Δημητρίου',
     time: '11:30',
     service: 'Online Συνεδρία',
     status: 'UPCOMING',
   },
   {
     id: 3,
-    patientName: 'Ελένη Γεωργίου',
+    clientName: 'Ελένη Γεωργίου',
     time: '13:00',
     service: 'Πρώτη Αξιολογητική Συνεδρία',
     status: 'COMPLETED',
@@ -49,7 +49,7 @@ export default function DoctorDashboard() {
         </div>
 
         <div className="stat-card">
-          <span>Σύνολο Ασθενών</span>
+          <span>Σύνολο Θεραπευόμενων</span>
           <strong>24</strong>
         </div>
 
@@ -69,7 +69,7 @@ export default function DoctorDashboard() {
               className="dashboard-appointment-card"
             >
               <div>
-                <h3>{appointment.patientName}</h3>
+                <h3>{appointment.clientName}</h3>
                 <p>{appointment.service}</p>
               </div>
 

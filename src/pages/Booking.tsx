@@ -1,4 +1,4 @@
-import { constructor, useState } from 'react'
+import { useState } from 'react'
 import DatePicker from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
 
@@ -119,6 +119,7 @@ export default function Booking() {
             {authMode === 'register' && (
               <input  
                 type='text'
+                aria-label='Ονοματεπώνυμο'
                 placeholder='Ονοματεπώνυμο'
                 value={fullName}
                 onChange={(event) => setFullName(event.target.value)}
@@ -128,18 +129,20 @@ export default function Booking() {
 
             <input
               type='email'
-              placeholder='"Email'
+              aria-label='Email'
+              placeholder='Email'
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               />
 
               <input
               type='password'
+              /*aria-label='Κωδικός'*/
               placeholder='Κωδικός'
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               />
-              
+
               <button type="button" className="auth-submit">
               {authMode === 'login'
                 ? 'Σύνδεση'

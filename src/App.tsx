@@ -7,7 +7,7 @@ import Booking from './pages/Booking'
 import DoctorDashboard from './pages/DoctorDashboard'
 import Login from './pages/Login'
 import MyAppointments from './pages/MyAppointments'
-import Clients from './pages/TherapyClient'
+import Clients from './pages/Clients'
 import ClientDetails from './pages/ClientDetails'
 import Register from './pages/Register'
 

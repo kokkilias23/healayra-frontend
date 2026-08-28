@@ -1,0 +1,161 @@
+.availability-page {
+    max-width: 950px;
+    margin: 0 auto;
+    padding: 60px 20px;
+  }
+  
+  .availability-header h1 {
+    font-size: 36px;
+    margin-bottom: 8px;
+  }
+  
+  .availability-header p {
+    margin-top: 0;
+    color: #667085;
+    line-height: 1.6;
+  }
+  
+  .duration-card {
+    margin-top: 30px;
+    padding: 22px;
+  
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+  
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 16px;
+  }
+  
+  .duration-card label {
+    font-weight: 600;
+  }
+  
+  .duration-card select {
+    padding: 10px 14px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    background: white;
+    font-size: 15px;
+  }
+  
+  .availability-list {
+    display: grid;
+    gap: 16px;
+    margin-top: 24px;
+  }
+  
+  .availability-card {
+    padding: 22px;
+  
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 16px;
+  }
+  
+  .availability-card.inactive {
+    opacity: 0.65;
+  }
+  
+  .availability-day {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+  }
+  
+  .availability-day h2 {
+    margin: 0 0 5px;
+    font-size: 20px;
+  }
+  
+  .availability-day span {
+    color: #667085;
+    font-size: 14px;
+  }
+  
+  .day-toggle {
+    min-width: 100px;
+    padding: 10px 14px;
+  
+    border: 1px solid #ddd;
+    border-radius: 20px;
+  
+    background: #f1f1f1;
+    color: #555;
+  
+    cursor: pointer;
+  }
+  
+  .day-toggle.enabled {
+    background: #e8f4f4;
+    color: #1a6b6e;
+    border-color: #1a6b6e;
+  }
+  
+  .time-range {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+  }
+  
+  .time-range div {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .time-range label {
+    font-size: 14px;
+    font-weight: 600;
+  }
+  
+  .time-range input {
+    padding: 12px;
+  
+    border: 1px solid #ddd;
+    border-radius: 10px;
+  
+    background: white;
+    font-size: 15px;
+  }
+  
+  .save-availability-btn {
+    width: 100%;
+  
+    margin-top: 30px;
+    padding: 14px;
+  
+    border: none;
+    border-radius: 10px;
+  
+    background: #1a6b6e;
+    color: white;
+  
+    font-size: 16px;
+    font-weight: 600;
+  
+    cursor: pointer;
+  }
+  
+  @media (max-width: 768px) {
+    .duration-card {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  
+    .availability-day {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  
+    .time-range {
+      grid-template-columns: 1fr;
+    }
+  }

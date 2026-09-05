@@ -1,8 +1,8 @@
-import { apiRequest } from '../api/Αpi.ts'
+import { apiRequest } from '../api/Api.ts'
 import type {
     AuthResponse,
     LoginRequest,
-} from '../types/Αuth.ts'
+} from '../types/Auth.ts'
 
 export async function login(
     credentials: LoginRequest,

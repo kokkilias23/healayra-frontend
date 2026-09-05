@@ -5,7 +5,7 @@ import {
 
 import { useNavigate } from 'react-router-dom'
 
-import { login } from '../services/ΑuthService.ts'
+import { login } from '../services/AuthService.ts'
 
 export default function Login() {
     const navigate = useNavigate()

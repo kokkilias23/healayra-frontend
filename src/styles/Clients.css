@@ -1,58 +1,85 @@
-.patients-page {
-    max-width: 1000px;
-    margin: 0 auto;
-    padding: 60px 20px;
+.clients-page {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 60px 20px;
+}
+
+.clients-header h1 {
+  font-size: 36px;
+  margin-bottom: 8px;
+}
+
+.clients-header p {
+  margin-top: 0;
+  color: #667085;
+}
+
+.clients-search {
+  display: flex;
+  gap: 12px;
+  margin-top: 30px;
+}
+
+.clients-search input {
+  flex: 1;
+  padding: 12px 14px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  font-size: 16px;
+}
+
+.clients-search button {
+  padding: 12px 18px;
+  border: none;
+  border-radius: 10px;
+  background: #1a6b6e;
+  color: white;
+  cursor: pointer;
+}
+
+.clients-list {
+  display: grid;
+  gap: 18px;
+  margin-top: 30px;
+}
+
+.client-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+
+  padding: 24px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 16px;
+}
+
+.client-info h2 {
+  margin-top: 0;
+  margin-bottom: 12px;
+}
+
+.client-info p {
+  margin: 6px 0;
+}
+
+.client-details-link {
+  padding: 12px 18px;
+  background: #1a6b6e;
+  color: white;
+  text-decoration: none;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .clients-search {
+    flex-direction: column;
   }
-  
-  .patients-header h1 {
-    font-size: 36px;
-    margin-bottom: 8px;
+
+  .client-card {
+    flex-direction: column;
+    align-items: flex-start;
   }
-  
-  .patients-header p {
-    margin-top: 0;
-    color: #667085;
-  }
-  
-  .patients-list {
-    display: grid;
-    gap: 18px;
-    margin-top: 30px;
-  }
-  
-  .patient-card {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 20px;
-  
-    padding: 24px;
-    background: white;
-    border: 1px solid #ddd;
-    border-radius: 16px;
-  }
-  
-  .patient-info h2 {
-    margin-top: 0;
-    margin-bottom: 12px;
-  }
-  
-  .patient-info p {
-    margin: 6px 0;
-  }
-  
-  .patient-details-link {
-    padding: 12px 18px;
-    background: #1a6b6e;
-    color: white;
-    text-decoration: none;
-    border-radius: 10px;
-    white-space: nowrap;
-  }
-  
-  @media (max-width: 768px) {
-    .patient-card {
-      flex-direction: column;
-      align-items: flex-start;
-    }
-  }
+}

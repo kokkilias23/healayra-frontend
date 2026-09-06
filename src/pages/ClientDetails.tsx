@@ -19,8 +19,14 @@ import {
   getDoctorByUserId,
 } from '../services/DoctorService'
 
+import {
+  createNote,
+  getNotesByVisit,
+} from '../services/NoteService'
+
 import type { Client } from '../types/Client'
 import type { Visit } from '../types/Visit'
+import type { Note } from '../types/Note'
 
 import '../styles/ClientDetails.css'
 
@@ -32,6 +38,9 @@ export default function ClientDetails() {
 
   const [visits, setVisits] =
       useState<Visit[]>([])
+
+  const [notesByVisit, setNotesByVisit] =
+      useState<Record<number, Note[]>>({})
 
   const [loading, setLoading] =
       useState(true)
@@ -49,6 +58,17 @@ export default function ClientDetails() {
       useState('')
 
   const [savingVisit, setSavingVisit] =
+      useState(false)
+
+  const [
+    activeNoteVisitId,
+    setActiveNoteVisitId,
+  ] = useState<number | null>(null)
+
+  const [noteText, setNoteText] =
+      useState('')
+
+  const [savingNote, setSavingNote] =
       useState(false)
 
   useEffect(() => {
@@ -82,6 +102,29 @@ export default function ClientDetails() {
 
       setClient(clientData)
       setVisits(visitsData)
+
+      const notesEntries =
+          await Promise.all(
+              visitsData.map(
+                  async (visit) => {
+                    const notes =
+                        await getNotesByVisit(
+                            visit.id,
+                        )
+
+                    return [
+                      visit.id,
+                      notes,
+                    ] as const
+                  },
+              ),
+          )
+
+      setNotesByVisit(
+          Object.fromEntries(
+              notesEntries,
+          ),
+      )
     } catch (error) {
       if (error instanceof Error) {
         setError(error.message)
@@ -137,6 +180,13 @@ export default function ClientDetails() {
         ...currentVisits,
       ])
 
+      setNotesByVisit(
+          (currentNotes) => ({
+            ...currentNotes,
+            [newVisit.id]: [],
+          }),
+      )
+
       setVisitTime('')
       setService('')
       setShowVisitForm(false)
@@ -153,11 +203,73 @@ export default function ClientDetails() {
     }
   }
 
+  async function handleCreateNote(
+      event: FormEvent<HTMLFormElement>,
+      visitId: number,
+  ) {
+    event.preventDefault()
+
+    const normalizedNote =
+        noteText.trim()
+
+    if (!normalizedNote) {
+      return
+    }
+
+    setSavingNote(true)
+    setError('')
+
+    try {
+      const newNote =
+          await createNote({
+            visitId,
+            content: normalizedNote,
+          })
+
+      setNotesByVisit(
+          (currentNotes) => ({
+            ...currentNotes,
+            [visitId]: [
+              newNote,
+              ...(currentNotes[visitId] ?? []),
+            ],
+          }),
+      )
+
+      setNoteText('')
+      setActiveNoteVisitId(null)
+    } catch (error) {
+      if (error instanceof Error) {
+        setError(error.message)
+      } else {
+        setError(
+            'Δεν ήταν δυνατή η αποθήκευση της σημείωσης.',
+        )
+      }
+    } finally {
+      setSavingNote(false)
+    }
+  }
+
   function formatVisitDate(
       visitTime: string,
   ): string {
     return new Date(
         visitTime,
+    ).toLocaleString(
+        'el-GR',
+        {
+          dateStyle: 'short',
+          timeStyle: 'short',
+        },
+    )
+  }
+
+  function formatNoteDate(
+      createdAt: string,
+  ): string {
+    return new Date(
+        createdAt,
     ).toLocaleString(
         'el-GR',
         {
@@ -299,24 +411,123 @@ export default function ClientDetails() {
               </p>
           ) : (
               <div className="visit-list">
-                {visits.map((visit) => (
-                    <article
-                        key={visit.id}
-                        className="visit-card"
-                    >
-                      <div className="visit-header">
-                        <h3>
-                          {visit.service}
-                        </h3>
+                {visits.map((visit) => {
+                  const visitNotes =
+                      notesByVisit[visit.id] ?? []
 
-                        <span>
-                    {formatVisitDate(
-                        visit.visitTime,
-                    )}
-                  </span>
-                      </div>
-                    </article>
-                ))}
+                  return (
+                      <article
+                          key={visit.id}
+                          className="visit-card"
+                      >
+                        <div className="visit-header">
+                          <div>
+                            <h3>
+                              {visit.service}
+                            </h3>
+
+                            <span>
+                        {formatVisitDate(
+                            visit.visitTime,
+                        )}
+                      </span>
+                          </div>
+
+                          <button
+                              type="button"
+                              className="add-note-btn"
+                              onClick={() => {
+                                setActiveNoteVisitId(
+                                    visit.id,
+                                )
+
+                                setNoteText('')
+                              }}
+                          >
+                            + Σημείωση
+                          </button>
+                        </div>
+
+                        {activeNoteVisitId ===
+                            visit.id && (
+                                <form
+                                    className="note-form"
+                                    onSubmit={(event) =>
+                                        handleCreateNote(
+                                            event,
+                                            visit.id,
+                                        )
+                                    }
+                                >
+                                  <h3>
+                                    Νέα Σημείωση
+                                  </h3>
+
+                                  <textarea
+                                      rows={5}
+                                      placeholder="Γράψτε τη σημείωση..."
+                                      value={noteText}
+                                      onChange={(event) =>
+                                          setNoteText(
+                                              event.target.value,
+                                          )
+                                      }
+                                      required
+                                  />
+
+                                  <div className="note-form-actions">
+                                    <button
+                                        type="button"
+                                        className="cancel-note-btn"
+                                        onClick={() => {
+                                          setActiveNoteVisitId(
+                                              null,
+                                          )
+
+                                          setNoteText('')
+                                        }}
+                                    >
+                                      Ακύρωση
+                                    </button>
+
+                                    <button
+                                        type="submit"
+                                        className="save-note-btn"
+                                        disabled={savingNote}
+                                    >
+                                      {savingNote
+                                          ? 'Αποθήκευση...'
+                                          : 'Αποθήκευση'}
+                                    </button>
+                                  </div>
+                                </form>
+                            )}
+
+                        {visitNotes.length === 0 ? (
+                            <p>
+                              Δεν υπάρχουν σημειώσεις για αυτή τη συνεδρία.
+                            </p>
+                        ) : (
+                            visitNotes.map((note) => (
+                                <div
+                                    key={note.id}
+                                    className="visit-note"
+                                >
+                                  <p>
+                                    {note.content}
+                                  </p>
+
+                                  <small>
+                                    {formatNoteDate(
+                                        note.createdAt,
+                                    )}
+                                  </small>
+                                </div>
+                            ))
+                        )}
+                      </article>
+                  )
+                })}
               </div>
           )}
         </div>

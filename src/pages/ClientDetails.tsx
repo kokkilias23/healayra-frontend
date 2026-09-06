@@ -1,183 +1,325 @@
-import { useState } from 'react'
+import {
+  useEffect,
+  useState,
+  type FormEvent,
+} from 'react'
+
 import { useParams } from 'react-router-dom'
+
+import {
+  getClientById,
+} from '../services/ClientService'
+
+import {
+  createVisit,
+  getVisitsByClient,
+} from '../services/VisitService'
+
+import {
+  getDoctorByUserId,
+} from '../services/DoctorService'
+
+import type { Client } from '../types/Client'
+import type { Visit } from '../types/Visit'
+
 import '../styles/ClientDetails.css'
-
-type Visit = {
-  id: number
-  date: string
-  service: string
-  notes: string
-}
-
-type Client = {
-  id: number
-  fullName: string
-  email: string
-  phone: string
-  visits: Visit[]
-}
-
-const clients: Client[] = [
-  {
-    id: 1,
-    fullName: 'Μαρία Παπαδοπούλου',
-    email: 'maria@example.com',
-    phone: '6900000001',
-    visits: [
-      {
-        id: 1,
-        date: '24/08/2026',
-        service: 'Ατομική Συνεδρία',
-        notes: 'Πρώτη συνάντηση και αρχική αξιολόγηση.',
-      },
-      {
-        id: 2,
-        date: '17/08/2026',
-        service: 'Ατομική Συνεδρία',
-        notes: 'Συζήτηση σχετικά με τους στόχους της θεραπείας.',
-      },
-    ],
-  },
-  {
-    id: 2,
-    fullName: 'Νίκος Δημητρίου',
-    email: 'nikos@example.com',
-    phone: '6900000002',
-    visits: [
-      {
-        id: 1,
-        date: '20/08/2026',
-        service: 'Online Συνεδρία',
-        notes: 'Online συνεδρία παρακολούθησης.',
-      },
-    ],
-  },
-]
 
 export default function ClientDetails() {
   const { id } = useParams()
 
-  const selectedClient = clients.find(
-    (client) => client.id === Number(id),
-  )
+  const [client, setClient] =
+      useState<Client | null>(null)
 
-  const [visits, setVisits] = useState<Visit[]>(
-    selectedClient?.visits ?? [],
-  )
+  const [visits, setVisits] =
+      useState<Visit[]>([])
 
-  const [showNoteForm, setShowNoteForm] = useState(false)
-  const [noteText, setNoteText] = useState('')
+  const [loading, setLoading] =
+      useState(true)
 
-  if (!selectedClient) {
-    return (
-      <section className="client-details-page">
-        <h1>Ο θεραπευόμενος δεν βρέθηκε.</h1>
-      </section>
-    )
-  }
+  const [error, setError] =
+      useState('')
 
-  const handleAddNote = () => {
-    if (!noteText.trim()) {
+  const [showVisitForm, setShowVisitForm] =
+      useState(false)
+
+  const [visitTime, setVisitTime] =
+      useState('')
+
+  const [service, setService] =
+      useState('')
+
+  const [savingVisit, setSavingVisit] =
+      useState(false)
+
+  useEffect(() => {
+    if (!id) {
+      setError(
+          'Δεν βρέθηκε αναγνωριστικό θεραπευόμενου.',
+      )
+
+      setLoading(false)
+
       return
     }
 
-    const newVisit: Visit = {
-      id: Date.now(),
-      date: new Date().toLocaleDateString('el-GR'),
-      service: 'Σημείωση Συνεδρίας',
-      notes: noteText,
+    loadClientDetails(Number(id))
+  }, [id])
+
+  async function loadClientDetails(
+      clientId: number,
+  ) {
+    setLoading(true)
+    setError('')
+
+    try {
+      const [
+        clientData,
+        visitsData,
+      ] = await Promise.all([
+        getClientById(clientId),
+        getVisitsByClient(clientId),
+      ])
+
+      setClient(clientData)
+      setVisits(visitsData)
+    } catch (error) {
+      if (error instanceof Error) {
+        setError(error.message)
+      } else {
+        setError(
+            'Δεν ήταν δυνατή η φόρτωση του θεραπευόμενου.',
+        )
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleCreateVisit(
+      event: FormEvent<HTMLFormElement>,
+  ) {
+    event.preventDefault()
+
+    if (!client) {
+      return
     }
 
-    setVisits((currentVisits) => [
-      newVisit,
-      ...currentVisits,
-    ])
+    const userId =
+        localStorage.getItem('userId')
 
-    setNoteText('')
-    setShowNoteForm(false)
+    if (!userId) {
+      setError(
+          'Δεν βρέθηκαν στοιχεία συνδεδεμένου γιατρού.',
+      )
+
+      return
+    }
+
+    setSavingVisit(true)
+    setError('')
+
+    try {
+      const doctor =
+          await getDoctorByUserId(
+              Number(userId),
+          )
+
+      const newVisit =
+          await createVisit({
+            doctorId: doctor.id,
+            clientId: client.id,
+            visitTime,
+            service,
+          })
+
+      setVisits((currentVisits) => [
+        newVisit,
+        ...currentVisits,
+      ])
+
+      setVisitTime('')
+      setService('')
+      setShowVisitForm(false)
+    } catch (error) {
+      if (error instanceof Error) {
+        setError(error.message)
+      } else {
+        setError(
+            'Δεν ήταν δυνατή η δημιουργία της συνεδρίας.',
+        )
+      }
+    } finally {
+      setSavingVisit(false)
+    }
+  }
+
+  function formatVisitDate(
+      visitTime: string,
+  ): string {
+    return new Date(
+        visitTime,
+    ).toLocaleString(
+        'el-GR',
+        {
+          dateStyle: 'short',
+          timeStyle: 'short',
+        },
+    )
+  }
+
+  if (loading) {
+    return (
+        <section className="client-details-page">
+          <p>Φόρτωση...</p>
+        </section>
+    )
+  }
+
+  if (error && !client) {
+    return (
+        <section className="client-details-page">
+          <h1>
+            Ο θεραπευόμενος δεν βρέθηκε.
+          </h1>
+
+          <p role="alert">
+            {error}
+          </p>
+        </section>
+    )
+  }
+
+  if (!client) {
+    return null
   }
 
   return (
-    <section className="client-details-page">
-      <div className="client-profile">
-        <h1>{selectedClient.fullName}</h1>
+      <section className="client-details-page">
+        <div className="client-profile">
+          <h1>
+            {client.firstName}{' '}
+            {client.lastName}
+          </h1>
 
-        <p>
-          <strong>Email:</strong> {selectedClient.email}
-        </p>
-
-        <p>
-          <strong>Τηλέφωνο:</strong> {selectedClient.phone}
-        </p>
-      </div>
-
-      <div className="client-history-header">
-        <h2>Ιστορικό Συνεδριών</h2>
-
-        <button
-          type="button"
-          className="add-note-btn"
-          onClick={() => setShowNoteForm(true)}
-        >
-          + Προσθήκη Σημείωσης
-        </button>
-      </div>
-
-      {showNoteForm && (
-        <div className="note-form">
-          <h3>Νέα Σημείωση</h3>
-
-          <textarea
-            rows={6}
-            placeholder="Γράψτε τη σημείωση..."
-            value={noteText}
-            onChange={(event) => setNoteText(event.target.value)}
-          />
-
-          <div className="note-form-actions">
-            <button
-              type="button"
-              className="cancel-note-btn"
-              onClick={() => {
-                setShowNoteForm(false)
-                setNoteText('')
-              }}
-            >
-              Ακύρωση
-            </button>
-
-            <button
-              type="button"
-              className="save-note-btn"
-              onClick={handleAddNote}
-            >
-              Αποθήκευση
-            </button>
-          </div>
+          <p>
+            <strong>
+              Τηλέφωνο:
+            </strong>{' '}
+            {client.phone || '—'}
+          </p>
         </div>
-      )}
 
-      <div className="client-history">
-        {visits.length === 0 ? (
-          <p>Δεν υπάρχουν καταχωρημένες συνεδρίες.</p>
-        ) : (
-          <div className="visit-list">
-            {visits.map((visit) => (
-              <article
-                key={visit.id}
-                className="visit-card"
-              >
-                <div className="visit-header">
-                  <h3>{visit.service}</h3>
-                  <span>{visit.date}</span>
-                </div>
+        <div className="client-history-header">
+          <h2>
+            Ιστορικό Συνεδριών
+          </h2>
 
-                <p>{visit.notes}</p>
-              </article>
-            ))}
-          </div>
+          <button
+              type="button"
+              className="add-note-btn"
+              onClick={() =>
+                  setShowVisitForm(
+                      (currentValue) =>
+                          !currentValue,
+                  )
+              }
+          >
+            + Νέα Συνεδρία
+          </button>
+        </div>
+
+        {showVisitForm && (
+            <form
+                className="note-form"
+                onSubmit={handleCreateVisit}
+            >
+              <h3>
+                Νέα Συνεδρία
+              </h3>
+
+              <input
+                  type="datetime-local"
+                  value={visitTime}
+                  onChange={(event) =>
+                      setVisitTime(
+                          event.target.value,
+                      )
+                  }
+                  required
+              />
+
+              <input
+                  type="text"
+                  placeholder="Τύπος συνεδρίας"
+                  value={service}
+                  onChange={(event) =>
+                      setService(
+                          event.target.value,
+                      )
+                  }
+                  required
+              />
+
+              <div className="note-form-actions">
+                <button
+                    type="button"
+                    className="cancel-note-btn"
+                    onClick={() => {
+                      setShowVisitForm(false)
+                      setVisitTime('')
+                      setService('')
+                    }}
+                >
+                  Ακύρωση
+                </button>
+
+                <button
+                    type="submit"
+                    className="save-note-btn"
+                    disabled={savingVisit}
+                >
+                  {savingVisit
+                      ? 'Αποθήκευση...'
+                      : 'Αποθήκευση'}
+                </button>
+              </div>
+            </form>
         )}
-      </div>
-    </section>
+
+        {error && (
+            <p role="alert">
+              {error}
+            </p>
+        )}
+
+        <div className="client-history">
+          {visits.length === 0 ? (
+              <p>
+                Δεν υπάρχουν καταχωρημένες συνεδρίες.
+              </p>
+          ) : (
+              <div className="visit-list">
+                {visits.map((visit) => (
+                    <article
+                        key={visit.id}
+                        className="visit-card"
+                    >
+                      <div className="visit-header">
+                        <h3>
+                          {visit.service}
+                        </h3>
+
+                        <span>
+                    {formatVisitDate(
+                        visit.visitTime,
+                    )}
+                  </span>
+                      </div>
+                    </article>
+                ))}
+              </div>
+          )}
+        </div>
+      </section>
   )
 }

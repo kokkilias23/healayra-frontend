@@ -7,6 +7,14 @@ export async function getClients(): Promise<Client[]> {
     )
 }
 
+export async function getClientById(
+    clientId: number,
+): Promise<Client> {
+    return apiRequest<Client>(
+        `/api/clients/${clientId}`,
+    )
+}
+
 export async function searchClients(
     query: string,
 ): Promise<Client[]> {

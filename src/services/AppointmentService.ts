@@ -3,6 +3,7 @@ import { apiRequest } from '../api/Api'
 import type {
     Appointment,
     AppointmentCreateRequest,
+    AppointmentStatus,
 } from '../types/Appointment'
 
 export async function getAppointmentsByDoctor(
@@ -27,6 +28,21 @@ export async function createAppointment(
         {
             method: 'POST',
             body: JSON.stringify(request),
+        },
+    )
+}
+
+export async function updateAppointmentStatus(
+    appointmentId: number,
+    status: AppointmentStatus,
+): Promise<Appointment> {
+    return apiRequest<Appointment>(
+        `/api/appointments/${appointmentId}/status`,
+        {
+            method: 'PATCH',
+            body: JSON.stringify({
+                status,
+            }),
         },
     )
 }

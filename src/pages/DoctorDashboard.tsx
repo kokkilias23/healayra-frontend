@@ -9,6 +9,7 @@ import {
 
 import {
   getAppointmentsByDoctor,
+  updateAppointmentStatus,
 } from '../services/AppointmentService'
 
 import {
@@ -38,6 +39,11 @@ export default function DoctorDashboard() {
 
   const [error, setError] =
       useState('')
+
+  const [
+    updatingAppointmentId,
+    setUpdatingAppointmentId,
+  ] = useState<number | null>(null)
 
   useEffect(() => {
     loadDashboard()
@@ -96,6 +102,47 @@ export default function DoctorDashboard() {
     }
   }
 
+  async function handleConfirmAppointment(
+      appointmentId: number,
+  ) {
+    setUpdatingAppointmentId(
+        appointmentId,
+    )
+
+    setError('')
+
+    try {
+      const updatedAppointment =
+          await updateAppointmentStatus(
+              appointmentId,
+              'CONFIRMED',
+          )
+
+      setAppointments(
+          (currentAppointments) =>
+              currentAppointments.map(
+                  (appointment) =>
+                      appointment.id ===
+                      appointmentId
+                          ? updatedAppointment
+                          : appointment,
+              ),
+      )
+    } catch (error) {
+      if (error instanceof Error) {
+        setError(error.message)
+      } else {
+        setError(
+            'Δεν ήταν δυνατή η επιβεβαίωση του ραντεβού.',
+        )
+      }
+    } finally {
+      setUpdatingAppointmentId(
+          null,
+      )
+    }
+  }
+
   function getTodayDate(): string {
     const now = new Date()
 
@@ -131,6 +178,21 @@ export default function DoctorDashboard() {
     return `${client.firstName} ${client.lastName}`
   }
 
+  function formatDate(
+      appointmentTime: string,
+  ): string {
+    return new Date(
+        appointmentTime,
+    ).toLocaleDateString(
+        'el-GR',
+        {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+        },
+    )
+  }
+
   function formatTime(
       appointmentTime: string,
   ): string {
@@ -150,7 +212,7 @@ export default function DoctorDashboard() {
   ): string {
     switch (status) {
       case 'PENDING':
-        return 'ΑΝΑΜΟΝΗ'
+        return 'ΝΕΟ ΑΙΤΗΜΑ'
 
       case 'CONFIRMED':
         return 'ΕΠΙΒΕΒΑΙΩΜΕΝΟ'
@@ -182,6 +244,23 @@ export default function DoctorDashboard() {
 
   const today =
       getTodayDate()
+
+  const pendingAppointments =
+      appointments
+          .filter(
+              (appointment) =>
+                  appointment.status ===
+                  'PENDING',
+          )
+          .sort(
+              (first, second) =>
+                  new Date(
+                      first.appointmentTime,
+                  ).getTime() -
+                  new Date(
+                      second.appointmentTime,
+                  ).getTime(),
+          )
 
   const todayAppointments =
       appointments
@@ -226,12 +305,14 @@ export default function DoctorDashboard() {
   if (loading) {
     return (
         <section className="doctor-dashboard">
-          <p>Φόρτωση...</p>
+          <p>
+            Φόρτωση...
+          </p>
         </section>
     )
   }
 
-  if (error) {
+  if (error && appointments.length === 0) {
     return (
         <section className="doctor-dashboard">
           <p role="alert">
@@ -278,6 +359,16 @@ export default function DoctorDashboard() {
 
           <div className="stat-card">
           <span>
+            Νέα Αιτήματα
+          </span>
+
+            <strong>
+              {pendingAppointments.length}
+            </strong>
+          </div>
+
+          <div className="stat-card">
+          <span>
             Επόμενο Ραντεβού
           </span>
 
@@ -290,6 +381,86 @@ export default function DoctorDashboard() {
                   : '—'}
             </strong>
           </div>
+        </div>
+
+        {error && (
+            <p role="alert">
+              {error}
+            </p>
+        )}
+
+        <div className="dashboard-section">
+          <h2>
+            Αιτήματα Ραντεβού
+          </h2>
+
+          {pendingAppointments.length ===
+          0 ? (
+              <p>
+                Δεν υπάρχουν νέα αιτήματα.
+              </p>
+          ) : (
+              <div className="dashboard-appointments">
+                {pendingAppointments.map(
+                    (appointment) => (
+                        <article
+                            key={appointment.id}
+                            className="dashboard-appointment-card"
+                        >
+                          <div>
+                            <h3>
+                              {getClientName(
+                                  appointment.clientId,
+                              )}
+                            </h3>
+
+                            <p>
+                              {formatDate(
+                                  appointment
+                                      .appointmentTime,
+                              )}
+                              {' - '}
+                              {formatTime(
+                                  appointment
+                                      .appointmentTime,
+                              )}
+                            </p>
+                          </div>
+
+                          <div className="appointment-meta">
+                    <span
+                        className={`appointment-status ${getStatusClass(
+                            appointment.status,
+                        )}`}
+                    >
+                      {getStatusLabel(
+                          appointment.status,
+                      )}
+                    </span>
+
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    handleConfirmAppointment(
+                                        appointment.id,
+                                    )
+                                }
+                                disabled={
+                                    updatingAppointmentId ===
+                                    appointment.id
+                                }
+                            >
+                              {updatingAppointmentId ===
+                              appointment.id
+                                  ? 'Επιβεβαίωση...'
+                                  : 'Επιβεβαίωση'}
+                            </button>
+                          </div>
+                        </article>
+                    ),
+                )}
+              </div>
+          )}
         </div>
 
         <div className="dashboard-section">
@@ -308,9 +479,7 @@ export default function DoctorDashboard() {
                 {todayAppointments.map(
                     (appointment) => (
                         <article
-                            key={
-                              appointment.id
-                            }
+                            key={appointment.id}
                             className="dashboard-appointment-card"
                         >
                           <div>

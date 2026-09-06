@@ -97,7 +97,7 @@ export default function MyAppointments() {
   ): string {
     switch (status) {
       case 'PENDING':
-        return 'Σε αναμονή'
+        return 'Αναμένει επιβεβαίωση'
 
       case 'CONFIRMED':
         return 'Επιβεβαιωμένο'

@@ -11,3 +11,9 @@ export async function getAppointmentsByDoctor(
         `/api/appointments/doctor/${doctorId}`,
     )
 }
+
+export async function getMyAppointments(): Promise<Appointment[]> {
+    return apiRequest<Appointment[]>(
+        '/api/appointments/me',
+    )
+}

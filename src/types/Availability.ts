@@ -16,3 +16,19 @@ export interface Availability {
     sessionDuration: number
     enabled: boolean
 }
+
+export interface AvailabilityCreateRequest {
+    doctorId: number
+    dayOfWeek: DayOfWeek
+    startTime: string
+    endTime: string
+    sessionDuration: number
+    enabled: boolean
+}
+
+export interface AvailabilityUpdateRequest {
+    startTime: string
+    endTime: string
+    sessionDuration: number
+    enabled: boolean
+}

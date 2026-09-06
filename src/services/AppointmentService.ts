@@ -2,6 +2,7 @@ import { apiRequest } from '../api/Api'
 
 import type {
     Appointment,
+    AppointmentCreateRequest,
 } from '../types/Appointment'
 
 export async function getAppointmentsByDoctor(
@@ -15,5 +16,17 @@ export async function getAppointmentsByDoctor(
 export async function getMyAppointments(): Promise<Appointment[]> {
     return apiRequest<Appointment[]>(
         '/api/appointments/me',
+    )
+}
+
+export async function createAppointment(
+    request: AppointmentCreateRequest,
+): Promise<Appointment> {
+    return apiRequest<Appointment>(
+        '/api/appointments',
+        {
+            method: 'POST',
+            body: JSON.stringify(request),
+        },
     )
 }

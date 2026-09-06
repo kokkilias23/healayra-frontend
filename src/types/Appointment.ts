@@ -12,3 +12,8 @@ export interface Appointment {
     status: AppointmentStatus
     notes: string | null
 }
+
+export interface AppointmentCreateRequest {
+    doctorId: number
+    appointmentTime: string
+}

@@ -1,91 +1,354 @@
+import {
+  useEffect,
+  useState,
+} from 'react'
+
+import {
+  getDoctorByUserId,
+} from '../services/DoctorService'
+
+import {
+  getAppointmentsByDoctor,
+} from '../services/AppointmentService'
+
+import {
+  getClients,
+} from '../services/ClientService'
+
+import type {
+  Appointment,
+  AppointmentStatus,
+} from '../types/Appointment'
+
+import type {
+  Client,
+} from '../types/Client'
+
 import '../styles/DoctorDashboard.css'
 
-type DashboardAppointment = {
-  id: number
-  clientName: string
-  time: string
-  service: string
-  status: 'UPCOMING' | 'COMPLETED' | 'CANCELLED'
-}
-
-const todayAppointments: DashboardAppointment[] = [
-  {
-    id: 1,
-    clientName: 'Μαρία Παπαδοπούλου',
-    time: '10:00',
-    service: 'Ατομική Συνεδρία',
-    status: 'UPCOMING',
-  },
-  {
-    id: 2,
-    clientName: 'Νίκος Δημητρίου',
-    time: '11:30',
-    service: 'Online Συνεδρία',
-    status: 'UPCOMING',
-  },
-  {
-    id: 3,
-    clientName: 'Ελένη Γεωργίου',
-    time: '13:00',
-    service: 'Πρώτη Αξιολογητική Συνεδρία',
-    status: 'COMPLETED',
-  },
-]
-
 export default function DoctorDashboard() {
+  const [appointments, setAppointments] =
+      useState<Appointment[]>([])
+
+  const [clients, setClients] =
+      useState<Client[]>([])
+
+  const [loading, setLoading] =
+      useState(true)
+
+  const [error, setError] =
+      useState('')
+
+  useEffect(() => {
+    loadDashboard()
+  }, [])
+
+  async function loadDashboard() {
+    const userId =
+        localStorage.getItem('userId')
+
+    if (!userId) {
+      setError(
+          'Δεν βρέθηκαν στοιχεία συνδεδεμένου γιατρού.',
+      )
+
+      setLoading(false)
+
+      return
+    }
+
+    setLoading(true)
+    setError('')
+
+    try {
+      const doctor =
+          await getDoctorByUserId(
+              Number(userId),
+          )
+
+      const [
+        appointmentsData,
+        clientsData,
+      ] = await Promise.all([
+        getAppointmentsByDoctor(
+            doctor.id,
+        ),
+        getClients(),
+      ])
+
+      setAppointments(
+          appointmentsData,
+      )
+
+      setClients(
+          clientsData,
+      )
+    } catch (error) {
+      if (error instanceof Error) {
+        setError(error.message)
+      } else {
+        setError(
+            'Δεν ήταν δυνατή η φόρτωση του dashboard.',
+        )
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  function getTodayDate(): string {
+    const now = new Date()
+
+    const year =
+        now.getFullYear()
+
+    const month =
+        String(
+            now.getMonth() + 1,
+        ).padStart(2, '0')
+
+    const day =
+        String(
+            now.getDate(),
+        ).padStart(2, '0')
+
+    return `${year}-${month}-${day}`
+  }
+
+  function getClientName(
+      clientId: number,
+  ): string {
+    const client =
+        clients.find(
+            (client) =>
+                client.id === clientId,
+        )
+
+    if (!client) {
+      return 'Άγνωστος θεραπευόμενος'
+    }
+
+    return `${client.firstName} ${client.lastName}`
+  }
+
+  function formatTime(
+      appointmentTime: string,
+  ): string {
+    return new Date(
+        appointmentTime,
+    ).toLocaleTimeString(
+        'el-GR',
+        {
+          hour: '2-digit',
+          minute: '2-digit',
+        },
+    )
+  }
+
+  function getStatusLabel(
+      status: AppointmentStatus,
+  ): string {
+    switch (status) {
+      case 'PENDING':
+        return 'ΑΝΑΜΟΝΗ'
+
+      case 'CONFIRMED':
+        return 'ΕΠΙΒΕΒΑΙΩΜΕΝΟ'
+
+      case 'COMPLETED':
+        return 'ΟΛΟΚΛΗΡΩΜΕΝΟ'
+
+      case 'CANCELLED':
+        return 'ΑΚΥΡΩΜΕΝΟ'
+    }
+  }
+
+  function getStatusClass(
+      status: AppointmentStatus,
+  ): string {
+    if (
+        status === 'PENDING' ||
+        status === 'CONFIRMED'
+    ) {
+      return 'upcoming'
+    }
+
+    if (status === 'COMPLETED') {
+      return 'completed'
+    }
+
+    return 'cancelled'
+  }
+
+  const today =
+      getTodayDate()
+
+  const todayAppointments =
+      appointments
+          .filter(
+              (appointment) =>
+                  appointment.appointmentTime
+                      .split('T')[0] === today,
+          )
+          .sort(
+              (first, second) =>
+                  new Date(
+                      first.appointmentTime,
+                  ).getTime() -
+                  new Date(
+                      second.appointmentTime,
+                  ).getTime(),
+          )
+
+  const nextAppointment =
+      appointments
+          .filter(
+              (appointment) =>
+                  appointment.status !==
+                  'CANCELLED' &&
+                  appointment.status !==
+                  'COMPLETED' &&
+                  new Date(
+                      appointment.appointmentTime,
+                  ).getTime() >=
+                  Date.now(),
+          )
+          .sort(
+              (first, second) =>
+                  new Date(
+                      first.appointmentTime,
+                  ).getTime() -
+                  new Date(
+                      second.appointmentTime,
+                  ).getTime(),
+          )[0]
+
+  if (loading) {
+    return (
+        <section className="doctor-dashboard">
+          <p>Φόρτωση...</p>
+        </section>
+    )
+  }
+
+  if (error) {
+    return (
+        <section className="doctor-dashboard">
+          <p role="alert">
+            {error}
+          </p>
+        </section>
+    )
+  }
+
   return (
-    <section className="doctor-dashboard">
-      <div className="dashboard-header">
-        <div>
-          <h1>Doctor Dashboard</h1>
-          <p>Καλώς ήρθατε πίσω.</p>
-        </div>
-      </div>
+      <section className="doctor-dashboard">
+        <div className="dashboard-header">
+          <div>
+            <h1>
+              Doctor Dashboard
+            </h1>
 
-      <div className="dashboard-stats">
-        <div className="stat-card">
-          <span>Σημερινά Ραντεβού</span>
-          <strong>3</strong>
-        </div>
-
-        <div className="stat-card">
-          <span>Σύνολο Θεραπευόμενων</span>
-          <strong>24</strong>
+            <p>
+              Καλώς ήρθατε πίσω.
+            </p>
+          </div>
         </div>
 
-        <div className="stat-card">
-          <span>Επόμενο Ραντεβού</span>
-          <strong>10:00</strong>
+        <div className="dashboard-stats">
+          <div className="stat-card">
+          <span>
+            Σημερινά Ραντεβού
+          </span>
+
+            <strong>
+              {todayAppointments.length}
+            </strong>
+          </div>
+
+          <div className="stat-card">
+          <span>
+            Σύνολο Θεραπευόμενων
+          </span>
+
+            <strong>
+              {clients.length}
+            </strong>
+          </div>
+
+          <div className="stat-card">
+          <span>
+            Επόμενο Ραντεβού
+          </span>
+
+            <strong>
+              {nextAppointment
+                  ? formatTime(
+                      nextAppointment
+                          .appointmentTime,
+                  )
+                  : '—'}
+            </strong>
+          </div>
         </div>
-      </div>
 
-      <div className="dashboard-section">
-        <h2>Σημερινά Ραντεβού</h2>
+        <div className="dashboard-section">
+          <h2>
+            Σημερινά Ραντεβού
+          </h2>
 
-        <div className="dashboard-appointments">
-          {todayAppointments.map((appointment) => (
-            <article
-              key={appointment.id}
-              className="dashboard-appointment-card"
-            >
-              <div>
-                <h3>{appointment.clientName}</h3>
-                <p>{appointment.service}</p>
+          {todayAppointments.length ===
+          0 ? (
+              <p>
+                Δεν υπάρχουν ραντεβού
+                για σήμερα.
+              </p>
+          ) : (
+              <div className="dashboard-appointments">
+                {todayAppointments.map(
+                    (appointment) => (
+                        <article
+                            key={
+                              appointment.id
+                            }
+                            className="dashboard-appointment-card"
+                        >
+                          <div>
+                            <h3>
+                              {getClientName(
+                                  appointment.clientId,
+                              )}
+                            </h3>
+
+                            <p>
+                              Ραντεβού
+                            </p>
+                          </div>
+
+                          <div className="appointment-meta">
+                            <strong>
+                              {formatTime(
+                                  appointment
+                                      .appointmentTime,
+                              )}
+                            </strong>
+
+                            <span
+                                className={`appointment-status ${getStatusClass(
+                                    appointment.status,
+                                )}`}
+                            >
+                      {getStatusLabel(
+                          appointment.status,
+                      )}
+                    </span>
+                          </div>
+                        </article>
+                    ),
+                )}
               </div>
-
-              <div className="appointment-meta">
-                <strong>{appointment.time}</strong>
-
-                <span
-                  className={`appointment-status ${appointment.status.toLowerCase()}`}
-                >
-                  {appointment.status}
-                </span>
-              </div>
-            </article>
-          ))}
+          )}
         </div>
-      </div>
-    </section>
+      </section>
   )
 }

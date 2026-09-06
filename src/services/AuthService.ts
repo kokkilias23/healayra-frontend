@@ -1,21 +1,16 @@
-import { apiRequest } from '../api/Api.ts'
+import {
+    apiRequest,
+} from '../api/Api'
+
 import type {
     AuthResponse,
     LoginRequest,
-} from '../types/Auth.ts'
+    RegisterRequest,
+} from '../types/Auth'
 
-export async function login(
-    credentials: LoginRequest,
-): Promise<AuthResponse> {
-    const response =
-        await apiRequest<AuthResponse>(
-            '/api/auth/login',
-            {
-                method: 'POST',
-                body: JSON.stringify(credentials),
-            },
-        )
-
+function saveAuthData(
+    response: AuthResponse,
+): void {
     localStorage.setItem(
         'token',
         response.token,
@@ -35,25 +30,81 @@ export async function login(
         'role',
         response.role,
     )
+}
+
+export async function login(
+    credentials: LoginRequest,
+): Promise<AuthResponse> {
+    const response =
+        await apiRequest<AuthResponse>(
+            '/api/auth/login',
+            {
+                method: 'POST',
+                body: JSON.stringify(
+                    credentials,
+                ),
+            },
+        )
+
+    saveAuthData(response)
+
+    return response
+}
+
+export async function register(
+    data: RegisterRequest,
+): Promise<AuthResponse> {
+    const response =
+        await apiRequest<AuthResponse>(
+            '/api/auth/register',
+            {
+                method: 'POST',
+                body: JSON.stringify(
+                    data,
+                ),
+            },
+        )
+
+    saveAuthData(response)
 
     return response
 }
 
 export function logout(): void {
-    localStorage.removeItem('token')
-    localStorage.removeItem('userId')
-    localStorage.removeItem('email')
-    localStorage.removeItem('role')
+    localStorage.removeItem(
+        'token',
+    )
+
+    localStorage.removeItem(
+        'userId',
+    )
+
+    localStorage.removeItem(
+        'email',
+    )
+
+    localStorage.removeItem(
+        'role',
+    )
 }
 
-export function getToken(): string | null {
-    return localStorage.getItem('token')
+export function getToken():
+    string | null {
+    return localStorage.getItem(
+        'token',
+    )
 }
 
-export function getRole(): string | null {
-    return localStorage.getItem('role')
+export function getRole():
+    string | null {
+    return localStorage.getItem(
+        'role',
+    )
 }
 
-export function isAuthenticated(): boolean {
-    return Boolean(getToken())
+export function isAuthenticated():
+    boolean {
+    return Boolean(
+        getToken(),
+    )
 }

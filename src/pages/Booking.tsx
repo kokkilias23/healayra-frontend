@@ -14,12 +14,21 @@ import {
 } from '../services/DoctorService'
 
 import {
+  getAvailabilityByDoctor,
+} from '../services/AvailabilityService'
+
+import {
   createAppointment,
 } from '../services/AppointmentService'
 
 import type {
   Doctor,
 } from '../types/Doctor'
+
+import type {
+  Availability,
+  DayOfWeek,
+} from '../types/Availability'
 
 import 'react-datepicker/dist/react-datepicker.css'
 import '../styles/Booking.css'
@@ -30,6 +39,16 @@ const services = [
   'Online Συνεδρία',
 ]
 
+const dayOfWeekMap: Record<number, DayOfWeek> = {
+  0: 'SUNDAY',
+  1: 'MONDAY',
+  2: 'TUESDAY',
+  3: 'WEDNESDAY',
+  4: 'THURSDAY',
+  5: 'FRIDAY',
+  6: 'SATURDAY',
+}
+
 export default function Booking() {
   const navigate =
       useNavigate()
@@ -38,14 +57,24 @@ export default function Booking() {
       useState<Doctor | null>(null)
 
   const [
+    availability,
+    setAvailability,
+  ] = useState<Availability[]>([])
+
+  const [
     selectedService,
     setSelectedService,
   ] = useState('')
 
   const [
-    selectedDateTime,
-    setSelectedDateTime,
+    selectedDate,
+    setSelectedDate,
   ] = useState<Date | null>(null)
+
+  const [
+    selectedTime,
+    setSelectedTime,
+  ] = useState('')
 
   const [loading, setLoading] =
       useState(true)
@@ -60,10 +89,10 @@ export default function Booking() {
       useState(false)
 
   useEffect(() => {
-    loadDoctor()
+    loadBookingData()
   }, [])
 
-  async function loadDoctor() {
+  async function loadBookingData() {
     setLoading(true)
     setError('')
 
@@ -79,20 +108,174 @@ export default function Booking() {
         return
       }
 
+      const selectedDoctor =
+          doctors[0]
+
       setDoctor(
-          doctors[0],
+          selectedDoctor,
+      )
+
+      const availabilityData =
+          await getAvailabilityByDoctor(
+              selectedDoctor.id,
+          )
+
+      setAvailability(
+          availabilityData,
       )
     } catch (error) {
       if (error instanceof Error) {
         setError(error.message)
       } else {
         setError(
-            'Δεν ήταν δυνατή η φόρτωση του γιατρού.',
+            'Δεν ήταν δυνατή η φόρτωση της διαθεσιμότητας.',
         )
       }
     } finally {
       setLoading(false)
     }
+  }
+
+  function getAvailabilityForDate(
+      date: Date,
+  ): Availability | undefined {
+    const dayOfWeek =
+        dayOfWeekMap[
+            date.getDay()
+            ]
+
+    return availability.find(
+        (item) =>
+            item.dayOfWeek ===
+            dayOfWeek &&
+            item.enabled,
+    )
+  }
+
+  function isAvailableDate(
+      date: Date,
+  ): boolean {
+    return Boolean(
+        getAvailabilityForDate(
+            date,
+        ),
+    )
+  }
+
+  function timeToMinutes(
+      time: string,
+  ): number {
+    const [
+      hours,
+      minutes,
+    ] = time
+        .split(':')
+        .map(Number)
+
+    return (
+        hours * 60 +
+        minutes
+    )
+  }
+
+  function minutesToTime(
+      totalMinutes: number,
+  ): string {
+    const hours =
+        Math.floor(
+            totalMinutes / 60,
+        )
+
+    const minutes =
+        totalMinutes % 60
+
+    return (
+        `${String(hours).padStart(2, '0')}:` +
+        `${String(minutes).padStart(2, '0')}`
+    )
+  }
+
+  function getTimeSlots(): string[] {
+    if (!selectedDate) {
+      return []
+    }
+
+    const dayAvailability =
+        getAvailabilityForDate(
+            selectedDate,
+        )
+
+    if (!dayAvailability) {
+      return []
+    }
+
+    const startMinutes =
+        timeToMinutes(
+            dayAvailability.startTime,
+        )
+
+    const endMinutes =
+        timeToMinutes(
+            dayAvailability.endTime,
+        )
+
+    const duration =
+        dayAvailability.sessionDuration
+
+    const slots: string[] = []
+
+    for (
+        let current = startMinutes;
+        current + duration <=
+        endMinutes;
+        current += duration
+    ) {
+      const time =
+          minutesToTime(
+              current,
+          )
+
+      const slotDate =
+          combineDateAndTime(
+              selectedDate,
+              time,
+          )
+
+      if (
+          slotDate.getTime() >
+          Date.now()
+      ) {
+        slots.push(
+            time,
+        )
+      }
+    }
+
+    return slots
+  }
+
+  function combineDateAndTime(
+      date: Date,
+      time: string,
+  ): Date {
+    const [
+      hours,
+      minutes,
+    ] = time
+        .split(':')
+        .map(Number)
+
+    const result =
+        new Date(date)
+
+    result.setHours(
+        hours,
+        minutes,
+        0,
+        0,
+    )
+
+    return result
   }
 
   function formatLocalDateTime(
@@ -130,10 +313,17 @@ export default function Booking() {
   async function handleBooking() {
     if (
         !doctor ||
-        !selectedDateTime
+        !selectedDate ||
+        !selectedTime
     ) {
       return
     }
+
+    const appointmentDateTime =
+        combineDateAndTime(
+            selectedDate,
+            selectedTime,
+        )
 
     setSaving(true)
     setError('')
@@ -143,7 +333,7 @@ export default function Booking() {
         doctorId: doctor.id,
         appointmentTime:
             formatLocalDateTime(
-                selectedDateTime,
+                appointmentDateTime,
             ),
       })
 
@@ -166,6 +356,9 @@ export default function Booking() {
       setSaving(false)
     }
   }
+
+  const timeSlots =
+      getTimeSlots()
 
   if (loading) {
     return (
@@ -216,10 +409,11 @@ export default function Booking() {
                               service,
                           )
 
-                          setSelectedDateTime(
+                          setSelectedDate(
                               null,
                           )
 
+                          setSelectedTime('')
                           setSuccess(false)
                         }}
                         className={
@@ -239,37 +433,80 @@ export default function Booking() {
         {selectedService && (
             <div className="booking-step">
               <h2>
-                2. Επιλέξτε ημερομηνία και ώρα
+                2. Επιλέξτε διαθέσιμη ημερομηνία
               </h2>
 
               <DatePicker
                   selected={
-                    selectedDateTime
+                    selectedDate
                   }
                   onChange={(
                       date: Date | null,
                   ) => {
-                    setSelectedDateTime(
+                    setSelectedDate(
                         date,
                     )
 
+                    setSelectedTime('')
                     setSuccess(false)
                   }}
                   minDate={new Date()}
-                  showTimeSelect
-                  timeIntervals={30}
-                  timeFormat="HH:mm"
-                  dateFormat="dd/MM/yyyy HH:mm"
-                  placeholderText="Επιλέξτε ημερομηνία και ώρα"
+                  filterDate={
+                    isAvailableDate
+                  }
+                  dateFormat="dd/MM/yyyy"
+                  placeholderText="Επιλέξτε διαθέσιμη ημερομηνία"
               />
             </div>
         )}
 
+        {selectedDate && (
+            <div className="booking-step">
+              <h2>
+                3. Επιλέξτε ώρα
+              </h2>
+
+              {timeSlots.length === 0 ? (
+                  <p>
+                    Δεν υπάρχουν διαθέσιμες ώρες
+                    για αυτή την ημέρα.
+                  </p>
+              ) : (
+                  <div className="booking-options">
+                    {timeSlots.map(
+                        (time) => (
+                            <button
+                                key={time}
+                                type="button"
+                                onClick={() => {
+                                  setSelectedTime(
+                                      time,
+                                  )
+
+                                  setSuccess(false)
+                                }}
+                                className={
+                                  selectedTime ===
+                                  time
+                                      ? 'booking-option selected'
+                                      : 'booking-option'
+                                }
+                            >
+                              {time}
+                            </button>
+                        ),
+                    )}
+                  </div>
+              )}
+            </div>
+        )}
+
         {selectedService &&
-            selectedDateTime && (
+            selectedDate &&
+            selectedTime && (
                 <div className="booking-step confirmation">
                   <h2>
-                    3. Επιβεβαίωση Ραντεβού
+                    4. Επιβεβαίωση Ραντεβού
                   </h2>
 
                   <div className="confirmation-details">
@@ -284,7 +521,7 @@ export default function Booking() {
                       <strong>
                         Ημερομηνία:
                       </strong>{' '}
-                      {selectedDateTime
+                      {selectedDate
                           .toLocaleDateString(
                               'el-GR',
                           )}
@@ -294,16 +531,7 @@ export default function Booking() {
                       <strong>
                         Ώρα:
                       </strong>{' '}
-                      {selectedDateTime
-                          .toLocaleTimeString(
-                              'el-GR',
-                              {
-                                hour:
-                                    '2-digit',
-                                minute:
-                                    '2-digit',
-                              },
-                          )}
+                      {selectedTime}
                     </p>
                   </div>
 

@@ -8,13 +8,16 @@ import {
     useNavigate,
 } from 'react-router-dom'
 
+import logo from '../assets/healayra-logo.png'
+
 import {
     register,
 } from '../services/AuthService'
 
+import '../styles/Register.css'
+
 export default function Register() {
-    const navigate =
-        useNavigate()
+    const navigate = useNavigate()
 
     const [
         firstName,
@@ -106,165 +109,205 @@ export default function Register() {
     }
 
     return (
-        <main>
-            <h1>
-                Δημιουργία Λογαριασμού
-            </h1>
-
-            <p>
-                Δημιουργήστε λογαριασμό
-                για να κλείσετε το
-                ραντεβού σας.
-            </p>
-
-            <form
-                onSubmit={handleSubmit}
+        <main className="register-page">
+            <Link
+                to="/"
+                className="register-brand"
             >
-                <div>
-                    <label
-                        htmlFor="firstName"
-                    >
-                        Όνομα
-                    </label>
+                <img
+                    src={logo}
+                    alt="Healayra"
+                />
 
-                    <input
-                        id="firstName"
-                        type="text"
-                        value={firstName}
-                        onChange={(event) =>
-                            setFirstName(
-                                event.target.value,
-                            )
-                        }
-                        required
-                    />
-                </div>
+                <span>
+                    HEALAYRA
+                </span>
+            </Link>
 
-                <div>
-                    <label
-                        htmlFor="lastName"
-                    >
-                        Επώνυμο
-                    </label>
+            <section className="register-card">
+                <div className="register-header">
+                    <div className="register-logo-wrapper">
+                        <img
+                            src={logo}
+                            alt=""
+                            className="register-logo"
+                        />
+                    </div>
 
-                    <input
-                        id="lastName"
-                        type="text"
-                        value={lastName}
-                        onChange={(event) =>
-                            setLastName(
-                                event.target.value,
-                            )
-                        }
-                        required
-                    />
-                </div>
+                    <span className="register-eyebrow">
+                        Trust the Process.
+                    </span>
 
-                <div>
-                    <label
-                        htmlFor="email"
-                    >
-                        Email
-                    </label>
+                    <h1>
+                        Δημιουργία λογαριασμού
+                    </h1>
 
-                    <input
-                        id="email"
-                        type="email"
-                        value={email}
-                        onChange={(event) =>
-                            setEmail(
-                                event.target.value,
-                            )
-                        }
-                        required
-                    />
-                </div>
-
-                <div>
-                    <label
-                        htmlFor="phone"
-                    >
-                        Τηλέφωνο
-                    </label>
-
-                    <input
-                        id="phone"
-                        type="tel"
-                        value={phone}
-                        onChange={(event) =>
-                            setPhone(
-                                event.target.value,
-                            )
-                        }
-                    />
-                </div>
-
-                <div>
-                    <label
-                        htmlFor="password"
-                    >
-                        Κωδικός
-                    </label>
-
-                    <input
-                        id="password"
-                        type="password"
-                        value={password}
-                        onChange={(event) =>
-                            setPassword(
-                                event.target.value,
-                            )
-                        }
-                        minLength={8}
-                        required
-                    />
-                </div>
-
-                <div>
-                    <label
-                        htmlFor="confirmPassword"
-                    >
-                        Επιβεβαίωση Κωδικού
-                    </label>
-
-                    <input
-                        id="confirmPassword"
-                        type="password"
-                        value={
-                            confirmPassword
-                        }
-                        onChange={(event) =>
-                            setConfirmPassword(
-                                event.target.value,
-                            )
-                        }
-                        minLength={8}
-                        required
-                    />
-                </div>
-
-                {error && (
-                    <p role="alert">
-                        {error}
+                    <p>
+                        Δημιουργήστε τον λογαριασμό σας
+                        για να προγραμματίσετε το επόμενο
+                        ραντεβού σας.
                     </p>
-                )}
+                </div>
 
-                <button
-                    type="submit"
-                    disabled={loading}
+                <form
+                    onSubmit={handleSubmit}
+                    className="register-form"
                 >
-                    {loading
-                        ? 'Εγγραφή...'
-                        : 'Εγγραφή'}
-                </button>
-            </form>
+                    <div className="register-row">
+                        <div className="register-field">
+                            <label htmlFor="firstName">
+                                Όνομα
+                            </label>
 
-            <p>
-                Έχετε ήδη λογαριασμό;{' '}
-                <Link to="/login">
-                    Σύνδεση
-                </Link>
-            </p>
+                            <input
+                                id="firstName"
+                                type="text"
+                                value={firstName}
+                                onChange={(event) =>
+                                    setFirstName(
+                                        event.target.value,
+                                    )
+                                }
+                                placeholder="Όνομα"
+                                autoComplete="given-name"
+                                required
+                            />
+                        </div>
+
+                        <div className="register-field">
+                            <label htmlFor="lastName">
+                                Επώνυμο
+                            </label>
+
+                            <input
+                                id="lastName"
+                                type="text"
+                                value={lastName}
+                                onChange={(event) =>
+                                    setLastName(
+                                        event.target.value,
+                                    )
+                                }
+                                placeholder="Επώνυμο"
+                                autoComplete="family-name"
+                                required
+                            />
+                        </div>
+                    </div>
+
+                    <div className="register-field">
+                        <label htmlFor="email">
+                            Email
+                        </label>
+
+                        <input
+                            id="email"
+                            type="email"
+                            value={email}
+                            onChange={(event) =>
+                                setEmail(
+                                    event.target.value,
+                                )
+                            }
+                            placeholder="name@example.com"
+                            autoComplete="email"
+                            required
+                        />
+                    </div>
+
+                    <div className="register-field">
+                        <label htmlFor="phone">
+                            Τηλέφωνο
+                        </label>
+
+                        <input
+                            id="phone"
+                            type="tel"
+                            value={phone}
+                            onChange={(event) =>
+                                setPhone(
+                                    event.target.value,
+                                )
+                            }
+                            placeholder="69XXXXXXXX"
+                            autoComplete="tel"
+                        />
+                    </div>
+
+                    <div className="register-row">
+                        <div className="register-field">
+                            <label htmlFor="password">
+                                Κωδικός
+                            </label>
+
+                            <input
+                                id="password"
+                                type="password"
+                                value={password}
+                                onChange={(event) =>
+                                    setPassword(
+                                        event.target.value,
+                                    )
+                                }
+                                placeholder="••••••••"
+                                autoComplete="new-password"
+                                minLength={8}
+                                required
+                            />
+                        </div>
+
+                        <div className="register-field">
+                            <label htmlFor="confirmPassword">
+                                Επιβεβαίωση
+                            </label>
+
+                            <input
+                                id="confirmPassword"
+                                type="password"
+                                value={confirmPassword}
+                                onChange={(event) =>
+                                    setConfirmPassword(
+                                        event.target.value,
+                                    )
+                                }
+                                placeholder="••••••••"
+                                autoComplete="new-password"
+                                minLength={8}
+                                required
+                            />
+                        </div>
+                    </div>
+
+                    {error && (
+                        <div
+                            className="register-error"
+                            role="alert"
+                        >
+                            {error}
+                        </div>
+                    )}
+
+                    <button
+                        type="submit"
+                        className="register-submit"
+                        disabled={loading}
+                    >
+                        {loading
+                            ? 'Δημιουργία λογαριασμού...'
+                            : 'Δημιουργία λογαριασμού'}
+                    </button>
+                </form>
+
+                <div className="register-footer">
+                    <span>
+                        Έχετε ήδη λογαριασμό;
+                    </span>
+
+                    <Link to="/login">
+                        Σύνδεση
+                    </Link>
+                </div>
+            </section>
         </main>
     )
 }

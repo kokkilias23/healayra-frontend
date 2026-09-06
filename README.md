@@ -706,7 +706,7 @@ npm run build
 
 ## Author
 
-Developed by **kokkilias23** as a Coding Factory final project.
+Developed by **ILIAS KOKKALIDIS** as a Coding Factory final project.
 
 ## Healayra
 

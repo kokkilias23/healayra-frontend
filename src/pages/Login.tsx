@@ -3,9 +3,16 @@ import {
     type FormEvent,
 } from 'react'
 
-import { useNavigate } from 'react-router-dom'
+import {
+    Link,
+    useNavigate,
+} from 'react-router-dom'
+
+import logo from '../assets/healayra-logo.png'
 
 import { login } from '../services/AuthService.ts'
+
+import '../styles/Login.css'
 
 export default function Login() {
     const navigate = useNavigate()
@@ -56,57 +63,119 @@ export default function Login() {
     }
 
     return (
-        <main>
-            <h1>Σύνδεση</h1>
+        <main className="login-page">
+            <Link
+                to="/"
+                className="login-brand"
+            >
+                <img
+                    src={logo}
+                    alt="Healayra"
+                />
 
-            <form onSubmit={handleSubmit}>
-                <div>
-                    <label htmlFor="email">
-                        Email
-                    </label>
+                <span>
+                    HEALAYRA
+                </span>
+            </Link>
 
-                    <input
-                        id="email"
-                        type="email"
-                        value={email}
-                        onChange={(event) =>
-                            setEmail(event.target.value)
-                        }
-                        required
-                    />
-                </div>
+            <section className="login-card">
+                <div className="login-card-header">
+                    <div className="login-logo-wrapper">
+                        <img
+                            src={logo}
+                            alt=""
+                            className="login-logo"
+                        />
+                    </div>
 
-                <div>
-                    <label htmlFor="password">
-                        Κωδικός
-                    </label>
+                    <h1>
+                        Καλώς ήρθατε
+                    </h1>
 
-                    <input
-                        id="password"
-                        type="password"
-                        value={password}
-                        onChange={(event) =>
-                            setPassword(event.target.value)
-                        }
-                        required
-                    />
-                </div>
-
-                {error && (
-                    <p role="alert">
-                        {error}
+                    <p>
+                        Συνδεθείτε στον λογαριασμό σας
+                        για να συνεχίσετε.
                     </p>
-                )}
+                </div>
 
-                <button
-                    type="submit"
-                    disabled={loading}
+                <form
+                    onSubmit={handleSubmit}
+                    className="login-form"
                 >
-                    {loading
-                        ? 'Σύνδεση...'
-                        : 'Σύνδεση'}
-                </button>
-            </form>
+                    <div className="login-field">
+                        <label htmlFor="email">
+                            Email
+                        </label>
+
+                        <input
+                            id="email"
+                            type="email"
+                            value={email}
+                            onChange={(event) =>
+                                setEmail(
+                                    event.target.value
+                                )
+                            }
+                            placeholder="name@example.com"
+                            autoComplete="email"
+                            required
+                        />
+                    </div>
+
+                    <div className="login-field">
+                        <label htmlFor="password">
+                            Κωδικός
+                        </label>
+
+                        <input
+                            id="password"
+                            type="password"
+                            value={password}
+                            onChange={(event) =>
+                                setPassword(
+                                    event.target.value
+                                )
+                            }
+                            placeholder="••••••••"
+                            autoComplete="current-password"
+                            required
+                        />
+                    </div>
+
+                    {error && (
+                        <div
+                            className="login-error"
+                            role="alert"
+                        >
+                            {error}
+                        </div>
+                    )}
+
+                    <button
+                        type="submit"
+                        className="login-submit"
+                        disabled={loading}
+                    >
+                        {loading
+                            ? 'Σύνδεση...'
+                            : 'Σύνδεση'}
+                    </button>
+                </form>
+
+                <div className="login-footer">
+                    <span>
+                        Δεν έχετε λογαριασμό;
+                    </span>
+
+                    <Link to="/register">
+                        Δημιουργία λογαριασμού
+                    </Link>
+                </div>
+            </section>
+
+            <p className="login-tagline">
+                Trust the Process.
+            </p>
         </main>
     )
 }

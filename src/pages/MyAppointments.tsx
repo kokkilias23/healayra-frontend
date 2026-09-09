@@ -372,8 +372,9 @@ export default function MyAppointments() {
                                 </span>
 
                                 <h2>
-                                    Το επόμενο ραντεβού
-                                    σας
+                                    {
+                                        nextAppointment.service
+                                    }
                                 </h2>
 
                                 <p>
@@ -511,8 +512,9 @@ export default function MyAppointments() {
 
                                                         <div className="appointment-card-main">
                                                             <span className="appointment-card-label">
-                                                                Θεραπευτική
-                                                                Συνεδρία
+                                                                {
+                                                                    appointment.service
+                                                                }
                                                             </span>
 
                                                             <h3>
@@ -623,7 +625,9 @@ export default function MyAppointments() {
 
                                                         <div className="appointment-card-main">
                                                             <span className="appointment-card-label">
-                                                                Συνεδρία
+                                                                {
+                                                                    appointment.service
+                                                                }
                                                             </span>
 
                                                             <h3>

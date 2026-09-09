@@ -354,6 +354,7 @@ export default function Booking() {
   async function handleBooking() {
     if (
         !doctor ||
+        !selectedService ||
         !selectedDate ||
         !selectedTime
     ) {
@@ -370,7 +371,7 @@ export default function Booking() {
     setError('')
 
     try {
-      // Send the selected doctor and appointment time to the backend.
+      // Send the selected doctor, service and appointment time to the backend.
       await createAppointment({
         doctorId:
         doctor.id,
@@ -378,6 +379,8 @@ export default function Booking() {
             formatLocalDateTime(
                 appointmentDateTime,
             ),
+        service:
+        selectedService,
       })
 
       setSuccess(true)

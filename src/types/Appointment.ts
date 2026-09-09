@@ -9,6 +9,7 @@ export interface Appointment {
     doctorId: number
     clientId: number
     appointmentTime: string
+    service: string
     status: AppointmentStatus
     notes: string | null
 }
@@ -16,4 +17,5 @@ export interface Appointment {
 export interface AppointmentCreateRequest {
     doctorId: number
     appointmentTime: string
+    service: string
 }

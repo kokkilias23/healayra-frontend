@@ -15,18 +15,18 @@
     background:
             radial-gradient(
                     circle at 15% 15%,
-                    rgba(59, 130, 246, 0.16),
+                    rgba(169, 181, 143, 0.25),
                     transparent 28%
             ),
             radial-gradient(
                     circle at 85% 80%,
-                    rgba(168, 85, 247, 0.16),
+                    rgba(201, 179, 140, 0.18),
                     transparent 30%
             ),
             linear-gradient(
                     145deg,
-                    #f8faff,
-                    #f7f5ff
+                    #fbfaf7,
+                    #f4f2eb
             );
 }
 
@@ -41,7 +41,7 @@
 
     gap: 10px;
 
-    color: #172033;
+    color: var(--text);
 
     text-decoration: none;
 
@@ -71,21 +71,21 @@
 
     border:
             1px solid
-            rgba(226, 232, 240, 0.9);
+            rgba(220, 222, 213, 0.92);
 
     border-radius: 28px;
 
     box-shadow:
             0 30px 70px
-            rgba(35, 43, 80, 0.14);
+            rgba(50, 60, 45, 0.13);
 
     backdrop-filter: blur(18px);
 }
 
 .login-card-header {
-    text-align: center;
-
     margin-bottom: 30px;
+
+    text-align: center;
 }
 
 .login-logo-wrapper {
@@ -100,13 +100,13 @@
     background:
             linear-gradient(
                     145deg,
-                    #f1f5ff,
-                    #f5efff
+                    #f5f6f0,
+                    #e9eddf
             );
 
     border:
             1px solid
-            #e8e3ff;
+            #e0e4d5;
 
     border-radius: 24px;
 }
@@ -121,7 +121,7 @@
 .login-card-header h1 {
     margin: 0;
 
-    color: #172033;
+    color: var(--text);
 
     font-size: 31px;
 
@@ -129,12 +129,11 @@
 }
 
 .login-card-header p {
-    margin:
-            10px auto 0;
-
     max-width: 310px;
 
-    color: #737b8e;
+    margin: 10px auto 0;
+
+    color: var(--text-muted);
 
     font-size: 14px;
 
@@ -156,7 +155,7 @@
 }
 
 .login-field label {
-    color: #374151;
+    color: var(--text-soft);
 
     font-size: 14px;
     font-weight: 700;
@@ -168,13 +167,13 @@
 
     padding: 0 15px;
 
-    color: #172033;
+    color: var(--text);
 
-    background: #fbfcff;
+    background: #fcfcfa;
 
     border:
             1px solid
-            #dfe3eb;
+            #dfe2d9;
 
     border-radius: 13px;
 
@@ -189,29 +188,30 @@
 }
 
 .login-field input::placeholder {
-    color: #adb3c0;
+    color: #adb1a8;
 }
 
 .login-field input:focus {
     background: white;
 
-    border-color: #8b83ef;
+    border-color:
+            var(--primary-light);
 
     box-shadow:
             0 0 0 4px
-            rgba(79, 70, 229, 0.1);
+            rgba(125, 139, 98, 0.12);
 }
 
 .login-error {
     padding: 12px 14px;
 
-    color: #b4233d;
+    color: #9f424c;
 
-    background: #fff2f4;
+    background: #fff3f3;
 
     border:
             1px solid
-            #ffd4db;
+            #efd3d4;
 
     border-radius: 12px;
 
@@ -229,8 +229,8 @@
     background:
             linear-gradient(
                     135deg,
-                    #4f46e5,
-                    #8b5cf6
+                    #68764f,
+                    #89976c
             );
 
     border: 0;
@@ -242,7 +242,7 @@
 
     box-shadow:
             0 12px 26px
-            rgba(79, 70, 229, 0.24);
+            rgba(104, 118, 79, 0.24);
 
     transition:
             transform 0.2s ease,
@@ -251,11 +251,12 @@
 }
 
 .login-submit:hover:not(:disabled) {
-    transform: translateY(-2px);
+    transform:
+            translateY(-2px);
 
     box-shadow:
             0 16px 30px
-            rgba(79, 70, 229, 0.3);
+            rgba(104, 118, 79, 0.3);
 }
 
 .login-submit:disabled {
@@ -272,13 +273,13 @@
 
     margin-top: 25px;
 
-    color: #7a8191;
+    color: var(--text-muted);
 
     font-size: 14px;
 }
 
 .login-footer a {
-    color: var(--primary);
+    color: var(--primary-dark);
 
     text-decoration: none;
 
@@ -292,7 +293,7 @@
 .login-tagline {
     margin: 24px 0 0;
 
-    color: #8b91a0;
+    color: #899184;
 
     font-size: 13px;
     font-weight: 600;

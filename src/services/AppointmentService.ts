@@ -15,12 +15,13 @@ export async function getAppointmentsByDoctor(
     )
 }
 
+// Fetch appointments for the currently authenticated client.
 export async function getMyAppointments(): Promise<Appointment[]> {
     return apiRequest<Appointment[]>(
         '/api/appointments/me',
     )
 }
-
+// Create a new appointment using the selected doctor and appointment time.
 export async function createAppointment(
     request: AppointmentCreateRequest,
 ): Promise<Appointment> {

@@ -40,10 +40,12 @@ export default function MyAppointments() {
     const [error, setError] =
         useState('')
 
+    // Load the authenticated client's appointments when the page first renders.
     useEffect(() => {
         loadAppointments()
     }, [])
 
+    // Fetch all appointments belonging to the currently authenticated client.
     async function loadAppointments() {
         setLoading(true)
         setError('')
@@ -52,6 +54,7 @@ export default function MyAppointments() {
             const data =
                 await getMyAppointments()
 
+            // Keep the main appointment collection ordered from newest to oldest.
             const sortedAppointments =
                 [...data].sort(
                     (
@@ -86,6 +89,7 @@ export default function MyAppointments() {
         }
     }
 
+    // Format the full appointment date for the Greek UI.
     function formatDate(
         appointmentTime: string,
     ): string {
@@ -102,6 +106,7 @@ export default function MyAppointments() {
         )
     }
 
+    // Split the date into a compact day/month format used by appointment cards.
     function formatShortDate(
         appointmentTime: string,
     ): {
@@ -144,6 +149,7 @@ export default function MyAppointments() {
         )
     }
 
+    // Convert backend appointment statuses into user-friendly Greek labels.
     function getStatusLabel(
         status: AppointmentStatus,
     ): string {
@@ -162,6 +168,7 @@ export default function MyAppointments() {
         }
     }
 
+    // Map appointment statuses to the corresponding CSS class.
     function getStatusClass(
         status: AppointmentStatus,
     ): string {
@@ -180,6 +187,7 @@ export default function MyAppointments() {
         }
     }
 
+    // Select the small visual icon displayed next to each appointment status.
     function getStatusIcon(
         status: AppointmentStatus,
     ): string {
@@ -198,6 +206,7 @@ export default function MyAppointments() {
         }
     }
 
+    // Clear authentication data and return to the login page.
     function handleLogout() {
         logout()
 
@@ -207,6 +216,7 @@ export default function MyAppointments() {
     const now =
         Date.now()
 
+    // Keep only future appointments that are still active.
     const upcomingAppointments =
         appointments
             .filter(
@@ -220,6 +230,7 @@ export default function MyAppointments() {
                     appointment.status !==
                     'CANCELLED',
             )
+            // Upcoming appointments are shown from nearest to furthest.
             .sort(
                 (
                     first,
@@ -233,6 +244,7 @@ export default function MyAppointments() {
                     ).getTime(),
             )
 
+    // Everything that is not upcoming is displayed in the appointment history.
     const previousAppointments =
         appointments.filter(
             (appointment) =>
@@ -243,6 +255,7 @@ export default function MyAppointments() {
                 ),
         )
 
+    // The first upcoming appointment is the nearest future appointment.
     const nextAppointment =
         upcomingAppointments[0]
 
@@ -263,6 +276,8 @@ export default function MyAppointments() {
 
     return (
         <main className="my-appointments-page">
+
+            {/* Client navigation */}
             <header className="appointments-topbar">
                 <Link
                     to="/"
@@ -301,6 +316,8 @@ export default function MyAppointments() {
             </header>
 
             <section className="appointments-content">
+
+                {/* Page introduction and shortcut to create a new appointment */}
                 <header className="appointments-header">
                     <div>
                         <span className="appointments-eyebrow">
@@ -331,6 +348,7 @@ export default function MyAppointments() {
                     </Link>
                 </header>
 
+                {/* Backend request error */}
                 {error && (
                     <div
                         className="appointments-alert"
@@ -344,6 +362,7 @@ export default function MyAppointments() {
                     </div>
                 )}
 
+                {/* Highlight the nearest future appointment */}
                 {!error &&
                     nextAppointment && (
                         <section className="next-appointment-card">
@@ -396,6 +415,7 @@ export default function MyAppointments() {
                         </section>
                     )}
 
+                {/* Empty state shown when the client has no appointments at all */}
                 {!error &&
                     appointments.length ===
                     0 && (
@@ -428,6 +448,8 @@ export default function MyAppointments() {
                     appointments.length >
                     0 && (
                         <>
+
+                            {/* Future active appointments */}
                             <section className="appointments-section">
                                 <div className="appointments-section-header">
                                     <div>
@@ -539,6 +561,7 @@ export default function MyAppointments() {
                                 )}
                             </section>
 
+                            {/* Past, completed or cancelled appointments */}
                             <section className="appointments-section history-section">
                                 <div className="appointments-section-header">
                                     <div>

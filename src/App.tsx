@@ -22,6 +22,7 @@ function App() {
   return (
       <BrowserRouter>
         <Routes>
+            {/* Public routes */}
           <Route
               path="/"
               element={<Home />}
@@ -37,6 +38,7 @@ function App() {
               element={<Register />}
           />
 
+            {/* Client-only routes */}
           <Route
               path="/booking"
               element={
@@ -55,6 +57,7 @@ function App() {
               }
           />
 
+            {/* Doctor-only routes */}
           <Route
               path="/doctor/dashboard"
               element={

@@ -40,6 +40,7 @@ import type {
 import 'react-datepicker/dist/react-datepicker.css'
 import '../styles/Booking.css'
 
+// Services currently available for appointment booking.
 const services = [
   {
     name: 'Πρώτη Αξιολογητική Συνεδρία',
@@ -61,6 +62,7 @@ const services = [
   },
 ]
 
+// Map JavaScript weekday numbers to backend DayOfWeek values.
 const dayOfWeekMap:
     Record<number, DayOfWeek> = {
   0: 'SUNDAY',
@@ -111,10 +113,12 @@ export default function Booking() {
   const [success, setSuccess] =
       useState(false)
 
+  // Load the doctor and availability data when the booking page first opens.
   useEffect(() => {
     loadBookingData()
   }, [])
 
+  // Load the doctor used for booking and their weekly availability.
   async function loadBookingData() {
     setLoading(true)
     setError('')
@@ -131,6 +135,7 @@ export default function Booking() {
         return
       }
 
+      // MVP currently uses the first available doctor.
       const selectedDoctor =
           doctors[0]
 
@@ -161,6 +166,7 @@ export default function Booking() {
     }
   }
 
+  // Find the enabled availability record that matches the selected date.
   function getAvailabilityForDate(
       date: Date,
   ): Availability | undefined {
@@ -177,6 +183,7 @@ export default function Booking() {
     )
   }
 
+  // Used by the date picker to allow only days when the doctor is available.
   function isAvailableDate(
       date: Date,
   ): boolean {
@@ -187,6 +194,7 @@ export default function Booking() {
     )
   }
 
+  // Convert an HH:mm time value into total minutes.
   function timeToMinutes(
       time: string,
   ): number {
@@ -203,6 +211,7 @@ export default function Booking() {
     )
   }
 
+  // Convert total minutes back into HH:mm format.
   function minutesToTime(
       totalMinutes: number,
   ): string {
@@ -220,6 +229,7 @@ export default function Booking() {
     )
   }
 
+  // Generate appointment slots using the doctor's working hours and session duration.
   function getTimeSlots():
       string[] {
     if (!selectedDate) {
@@ -268,6 +278,7 @@ export default function Booking() {
               time,
           )
 
+      // Do not offer appointment slots that have already passed.
       if (
           slotDate.getTime() >
           Date.now()
@@ -281,6 +292,7 @@ export default function Booking() {
     return slots
   }
 
+  // Combine the selected calendar date and selected time into one Date object.
   function combineDateAndTime(
       date: Date,
       time: string,
@@ -305,6 +317,7 @@ export default function Booking() {
     return result
   }
 
+  // Format the selected local date and time for the Spring Boot API.
   function formatLocalDateTime(
       date: Date,
   ): string {
@@ -337,6 +350,7 @@ export default function Booking() {
     )
   }
 
+  // Create the appointment and redirect to the user's appointment list.
   async function handleBooking() {
     if (
         !doctor ||
@@ -356,6 +370,7 @@ export default function Booking() {
     setError('')
 
     try {
+      // Send the selected doctor and appointment time to the backend.
       await createAppointment({
         doctorId:
         doctor.id,
@@ -367,6 +382,7 @@ export default function Booking() {
 
       setSuccess(true)
 
+      // Keep the success state visible briefly before redirecting.
       setTimeout(() => {
         navigate(
             '/my-appointments',
@@ -387,12 +403,14 @@ export default function Booking() {
     }
   }
 
+  // Clear authentication data and return to the login page.
   function handleLogout() {
     logout()
 
     navigate('/login')
   }
 
+  // Determine whether each booking step is active, completed or pending.
   function getStepClass(
       step: number,
   ): string {
@@ -457,6 +475,7 @@ export default function Booking() {
     return ''
   }
 
+  // Recalculate the visible time slots whenever the current state changes.
   const timeSlots =
       getTimeSlots()
 
@@ -478,6 +497,8 @@ export default function Booking() {
 
   return (
       <main className="booking-page">
+
+        {/* Booking page navigation */}
         <header className="booking-topbar">
           <Link
               to="/"
@@ -489,8 +510,8 @@ export default function Booking() {
             />
 
             <span>
-                        HEALAYRA
-                    </span>
+              HEALAYRA
+            </span>
           </Link>
 
           <nav className="booking-navigation">
@@ -515,17 +536,18 @@ export default function Booking() {
           </nav>
         </header>
 
+        {/* Booking page introduction */}
         <section className="booking-hero">
-                <span className="booking-eyebrow">
-                    Appointment Booking
-                </span>
+          <span className="booking-eyebrow">
+            Appointment Booking
+          </span>
 
           <h1>
             Κλείστε το επόμενο
             <span>
-                        {' '}
+              {' '}
               ραντεβού σας.
-                    </span>
+            </span>
           </h1>
 
           <p>
@@ -536,6 +558,7 @@ export default function Booking() {
           </p>
         </section>
 
+        {/* Visual progress through the four booking steps */}
         <div className="booking-progress">
           {[1, 2, 3, 4].map(
               (step) => (
@@ -555,8 +578,8 @@ export default function Booking() {
                     </div>
 
                     <span>
-                                {step === 1 &&
-                                    'Υπηρεσία'}
+                      {step === 1 &&
+                          'Υπηρεσία'}
 
                       {step === 2 &&
                           'Ημερομηνία'}
@@ -566,7 +589,7 @@ export default function Booking() {
 
                       {step === 4 &&
                           'Επιβεβαίωση'}
-                            </span>
+                    </span>
                   </div>
               ),
           )}
@@ -577,9 +600,9 @@ export default function Booking() {
                 className="booking-alert"
                 role="alert"
             >
-                    <span>
-                        !
-                    </span>
+              <span>
+                !
+              </span>
 
               {error}
             </div>
@@ -587,16 +610,18 @@ export default function Booking() {
 
         <div className="booking-layout">
           <section className="booking-main">
+
+            {/* Step 1: Select the type of session */}
             <article className="booking-step">
               <div className="booking-step-header">
-                            <span className="booking-step-number">
-                                01
-                            </span>
+                <span className="booking-step-number">
+                  01
+                </span>
 
                 <div>
-                                <span className="booking-step-label">
-                                    Service
-                                </span>
+                  <span className="booking-step-label">
+                    Service
+                  </span>
 
                   <h2>
                     Επιλέξτε υπηρεσία
@@ -621,6 +646,7 @@ export default function Booking() {
                             }
                             type="button"
                             onClick={() => {
+                              // Changing service resets the later booking steps.
                               setSelectedService(
                                   service.name,
                               )
@@ -644,49 +670,50 @@ export default function Booking() {
                                     : ''
                             }`}
                         >
-                                        <span className="service-booking-icon">
-                                            {
-                                              service.icon
-                                            }
-                                        </span>
+                          <span className="service-booking-icon">
+                            {
+                              service.icon
+                            }
+                          </span>
 
                           <span className="service-booking-content">
-                                            <strong>
-                                                {
-                                                  service.name
-                                                }
-                                            </strong>
+                            <strong>
+                              {
+                                service.name
+                              }
+                            </strong>
 
-                                            <small>
-                                                {
-                                                  service.description
-                                                }
-                                            </small>
-                                        </span>
+                            <small>
+                              {
+                                service.description
+                              }
+                            </small>
+                          </span>
 
                           <span className="service-booking-check">
-                                            {selectedService ===
-                                            service.name
-                                                ? '✓'
-                                                : '○'}
-                                        </span>
+                            {selectedService ===
+                            service.name
+                                ? '✓'
+                                : '○'}
+                          </span>
                         </button>
                     ),
                 )}
               </div>
             </article>
 
+            {/* Step 2: Select only a date when the doctor is available */}
             {selectedService && (
                 <article className="booking-step">
                   <div className="booking-step-header">
-                                <span className="booking-step-number">
-                                    02
-                                </span>
+                    <span className="booking-step-number">
+                      02
+                    </span>
 
                     <div>
-                                    <span className="booking-step-label">
-                                        Date
-                                    </span>
+                      <span className="booking-step-label">
+                        Date
+                      </span>
 
                       <h2>
                         Επιλέξτε
@@ -715,6 +742,7 @@ export default function Booking() {
                               date,
                           )
 
+                          // A new date requires a new time selection.
                           setSelectedTime(
                               '',
                           )
@@ -734,24 +762,25 @@ export default function Booking() {
                     />
 
                     <span className="datepicker-help">
-                                    ◷ Επιλέξτε μία
-                                    διαθέσιμη ημέρα
-                                </span>
+                      ◷ Επιλέξτε μία
+                      διαθέσιμη ημέρα
+                    </span>
                   </div>
                 </article>
             )}
 
+            {/* Step 3: Select one generated appointment slot */}
             {selectedDate && (
                 <article className="booking-step">
                   <div className="booking-step-header">
-                                <span className="booking-step-number">
-                                    03
-                                </span>
+                    <span className="booking-step-number">
+                      03
+                    </span>
 
                     <div>
-                                    <span className="booking-step-label">
-                                        Time
-                                    </span>
+                      <span className="booking-step-label">
+                        Time
+                      </span>
 
                       <h2>
                         Επιλέξτε ώρα
@@ -768,9 +797,9 @@ export default function Booking() {
                   {timeSlots.length ===
                   0 ? (
                       <div className="no-time-slots">
-                                    <span>
-                                        ◷
-                                    </span>
+                        <span>
+                          ◷
+                        </span>
 
                         <div>
                           <strong>
@@ -811,9 +840,9 @@ export default function Booking() {
                                             : ''
                                     }`}
                                 >
-                                                <span>
-                                                    ◷
-                                                </span>
+                                  <span>
+                                    ◷
+                                  </span>
 
                                   {
                                     time
@@ -826,19 +855,20 @@ export default function Booking() {
                 </article>
             )}
 
+            {/* Step 4: Review the selected appointment before saving */}
             {selectedService &&
                 selectedDate &&
                 selectedTime && (
                     <article className="booking-step booking-confirmation">
                       <div className="booking-step-header">
-                                    <span className="booking-step-number">
-                                        04
-                                    </span>
+                        <span className="booking-step-number">
+                          04
+                        </span>
 
                         <div>
-                                        <span className="booking-step-label">
-                                            Confirmation
-                                        </span>
+                          <span className="booking-step-label">
+                            Confirmation
+                          </span>
 
                           <h2>
                             Επιβεβαίωση
@@ -856,9 +886,9 @@ export default function Booking() {
 
                       <div className="confirmation-details">
                         <div>
-                                        <span>
-                                            Υπηρεσία
-                                        </span>
+                          <span>
+                            Υπηρεσία
+                          </span>
 
                           <strong>
                             {
@@ -868,9 +898,9 @@ export default function Booking() {
                         </div>
 
                         <div>
-                                        <span>
-                                            Ημερομηνία
-                                        </span>
+                          <span>
+                            Ημερομηνία
+                          </span>
 
                           <strong>
                             {selectedDate.toLocaleDateString(
@@ -886,9 +916,9 @@ export default function Booking() {
                         </div>
 
                         <div>
-                                        <span>
-                                            Ώρα
-                                        </span>
+                          <span>
+                            Ώρα
+                          </span>
 
                           <strong>
                             {
@@ -919,12 +949,13 @@ export default function Booking() {
                 )}
           </section>
 
+          {/* Booking sidebar with doctor details and live appointment summary */}
           <aside className="booking-sidebar">
             {doctor && (
                 <section className="booking-doctor-card">
-                            <span className="booking-card-label">
-                                Your Professional
-                            </span>
+                  <span className="booking-card-label">
+                    Your Professional
+                  </span>
 
                   <div className="booking-doctor-main">
                     <div className="booking-doctor-avatar">
@@ -944,17 +975,17 @@ export default function Booking() {
                       </strong>
 
                       <span>
-                                        {
-                                          doctor.specialty
-                                        }
-                                    </span>
+                        {
+                          doctor.specialty
+                        }
+                      </span>
                     </div>
                   </div>
 
                   <div className="booking-doctor-message">
-                                <span>
-                                    ♡
-                                </span>
+                    <span>
+                      ♡
+                    </span>
 
                     <p>
                       Επιλέξτε τον χρόνο
@@ -966,18 +997,18 @@ export default function Booking() {
             )}
 
             <section className="booking-summary-card">
-                        <span className="booking-card-label">
-                            Appointment Summary
-                        </span>
+              <span className="booking-card-label">
+                Appointment Summary
+              </span>
 
               <h3>
                 Το ραντεβού σας
               </h3>
 
               <div className="booking-summary-item">
-                            <span>
-                                Υπηρεσία
-                            </span>
+                <span>
+                  Υπηρεσία
+                </span>
 
                 <strong>
                   {selectedService ||
@@ -986,9 +1017,9 @@ export default function Booking() {
               </div>
 
               <div className="booking-summary-item">
-                            <span>
-                                Ημερομηνία
-                            </span>
+                <span>
+                  Ημερομηνία
+                </span>
 
                 <strong>
                   {selectedDate
@@ -1000,9 +1031,9 @@ export default function Booking() {
               </div>
 
               <div className="booking-summary-item">
-                            <span>
-                                Ώρα
-                            </span>
+                <span>
+                  Ώρα
+                </span>
 
                 <strong>
                   {selectedTime ||
@@ -1011,9 +1042,9 @@ export default function Booking() {
               </div>
 
               <div className="booking-summary-footer">
-                            <span>
-                                ✓
-                            </span>
+                <span>
+                  ✓
+                </span>
 
                 <p>
                   Μετά την καταχώρηση,

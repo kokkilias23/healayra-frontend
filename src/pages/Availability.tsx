@@ -35,6 +35,7 @@ import type {
 import '../styles/DoctorDashboard.css'
 import '../styles/Availability.css'
 
+// Local form structure used to represent one weekday in the availability editor.
 interface DayAvailabilityForm {
     id?: number
     dayOfWeek: DayOfWeek
@@ -45,6 +46,7 @@ interface DayAvailabilityForm {
     endTime: string
 }
 
+// Map backend weekday values to the labels displayed in the UI.
 const dayDefinitions: {
     dayOfWeek: DayOfWeek
     label: string
@@ -87,6 +89,7 @@ const dayDefinitions: {
     },
 ]
 
+// Create the default weekly schedule before saved backend data is loaded.
 function createInitialAvailability():
     DayAvailabilityForm[] {
     return dayDefinitions.map(
@@ -137,11 +140,14 @@ export default function Availability() {
     const [success, setSuccess] =
         useState('')
 
+    // Load the doctor's saved availability when the page is first rendered.
     useEffect(() => {
         loadAvailability()
     }, [])
 
+    // Resolve the authenticated doctor and load the weekly schedule from the backend.
     async function loadAvailability() {
+        // The authenticated account ID is stored locally after login.
         const userId =
             localStorage.getItem(
                 'userId',
@@ -161,6 +167,7 @@ export default function Availability() {
         setError('')
 
         try {
+            // Convert the logged-in user account into its linked doctor profile.
             const doctorData =
                 await getDoctorByUserId(
                     Number(userId),
@@ -174,11 +181,13 @@ export default function Availability() {
                 doctorData.id,
             )
 
+            // Load all saved availability records for this doctor.
             const data =
                 await getAvailabilityByDoctor(
                     doctorData.id,
                 )
 
+            // Merge backend records with all seven weekdays so every day appears in the UI.
             const mergedAvailability =
                 dayDefinitions.map(
                     (day) => {
@@ -189,6 +198,7 @@ export default function Availability() {
                                     day.dayOfWeek,
                             )
 
+                        // Days not yet saved in the backend start disabled with default hours.
                         if (!existing) {
                             return {
                                 ...day,
@@ -222,6 +232,7 @@ export default function Availability() {
                 mergedAvailability,
             )
 
+            // Session duration is shared across the doctor's weekly availability records.
             if (data.length > 0) {
                 setSessionDuration(
                     data[0]
@@ -245,6 +256,7 @@ export default function Availability() {
         }
     }
 
+    // Enable or disable a single weekday without mutating the other days.
     function handleToggleDay(
         index: number,
     ) {
@@ -271,6 +283,7 @@ export default function Availability() {
         setSuccess('')
     }
 
+    // Update either the start or end time for one weekday.
     function handleTimeChange(
         index: number,
         field:
@@ -301,11 +314,13 @@ export default function Availability() {
         setSuccess('')
     }
 
+    // Validate and save the complete weekly availability configuration.
     async function handleSave() {
         if (!doctorId) {
             return
         }
 
+        // Validate time ranges only for weekdays that are currently enabled.
         const invalidDay =
             availability.find(
                 (item) =>
@@ -327,10 +342,12 @@ export default function Availability() {
         setSuccess('')
 
         try {
+            // Save all weekdays concurrently to reduce the total waiting time.
             const savedAvailability =
                 await Promise.all(
                     availability.map(
                         async (item) => {
+                            // Existing backend records are updated when an ID already exists.
                             if (item.id) {
                                 return updateAvailability(
                                     item.id,
@@ -346,6 +363,7 @@ export default function Availability() {
                                 )
                             }
 
+                            // Weekdays without an ID have not been saved yet and must be created.
                             return createAvailability(
                                 {
                                     doctorId,
@@ -364,6 +382,7 @@ export default function Availability() {
                     ),
                 )
 
+            // Synchronize the local state with the records returned by the backend.
             setAvailability(
                 (
                     currentAvailability,
@@ -425,12 +444,14 @@ export default function Availability() {
         }
     }
 
+    // Clear authentication data and return the user to the login page.
     function handleLogout() {
         logout()
 
         navigate('/login')
     }
 
+    // Count enabled weekdays for the summary displayed at the top of the page.
     const activeDays =
         availability.filter(
             (item) =>
@@ -454,6 +475,8 @@ export default function Availability() {
 
     return (
         <main className="doctor-dashboard-page">
+
+            {/* Doctor navigation sidebar */}
             <aside className="doctor-sidebar">
                 <Link
                     to="/doctor/dashboard"
@@ -543,6 +566,7 @@ export default function Availability() {
                 </div>
             </aside>
 
+            {/* Main availability settings content */}
             <section className="availability-content">
                 <header className="availability-header">
                     <div>
@@ -562,6 +586,7 @@ export default function Availability() {
                         </p>
                     </div>
 
+                    {/* Quick summary of active days and session duration */}
                     <div className="availability-summary">
                         <div>
                             <span>
@@ -593,6 +618,7 @@ export default function Availability() {
                     </div>
                 </header>
 
+                {/* Session duration used to calculate available booking slots */}
                 <section className="duration-card">
                     <div className="duration-info">
                         <div className="duration-icon">
@@ -678,6 +704,7 @@ export default function Availability() {
                     </div>
                 </div>
 
+                {/* Weekly availability editor */}
                 <section className="availability-list">
                     {availability.map(
                         (
@@ -745,6 +772,7 @@ export default function Availability() {
                                     </button>
                                 </div>
 
+                                {/* Time controls are visible only for enabled weekdays */}
                                 {item.enabled && (
                                     <div className="time-range">
                                         <div className="time-field">
@@ -835,6 +863,7 @@ export default function Availability() {
                     )}
                 </section>
 
+                {/* Error message returned by validation or backend requests */}
                 {error && (
                     <div
                         className="availability-alert error"
@@ -848,6 +877,7 @@ export default function Availability() {
                     </div>
                 )}
 
+                {/* Confirmation shown after a successful save */}
                 {success && (
                     <div className="availability-alert success">
                         <span>
@@ -858,6 +888,7 @@ export default function Availability() {
                     </div>
                 )}
 
+                {/* Save bar applies the current local changes to the backend */}
                 <div className="availability-save-bar">
                     <div>
                         <strong>

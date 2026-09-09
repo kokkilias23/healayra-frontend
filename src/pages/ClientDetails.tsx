@@ -50,9 +50,11 @@ import '../styles/DoctorDashboard.css'
 import '../styles/ClientDetails.css'
 
 export default function ClientDetails() {
+    // Read the client ID from the /doctor/clients/:id route.
     const { id } = useParams()
 
-    const navigate = useNavigate()
+    const navigate =
+        useNavigate()
 
     const [client, setClient] =
         useState<Client | null>(null)
@@ -60,6 +62,7 @@ export default function ClientDetails() {
     const [visits, setVisits] =
         useState<Visit[]>([])
 
+    // Store each visit's notes using the visit ID as the object key.
     const [
         notesByVisit,
         setNotesByVisit,
@@ -89,6 +92,7 @@ export default function ClientDetails() {
         setSavingVisit,
     ] = useState(false)
 
+    // Tracks which visit currently has its note form open.
     const [
         activeNoteVisitId,
         setActiveNoteVisitId,
@@ -104,6 +108,7 @@ export default function ClientDetails() {
         setSavingNote,
     ] = useState(false)
 
+    // Reload the client details whenever the route client ID changes.
     useEffect(() => {
         if (!id) {
             setError(
@@ -120,6 +125,7 @@ export default function ClientDetails() {
         )
     }, [id])
 
+    // Load the client profile and visit history in parallel.
     async function loadClientDetails(
         clientId: number,
     ) {
@@ -138,6 +144,7 @@ export default function ClientDetails() {
             setClient(clientData)
             setVisits(visitsData)
 
+            // Load the notes associated with every visit concurrently.
             const notesEntries =
                 await Promise.all(
                     visitsData.map(
@@ -147,6 +154,7 @@ export default function ClientDetails() {
                                     visit.id,
                                 )
 
+                            // Return [visitId, notes] pairs so they can become an object.
                             return [
                                 visit.id,
                                 notes,
@@ -155,6 +163,7 @@ export default function ClientDetails() {
                     ),
                 )
 
+            // Convert the [visitId, notes] pairs into { visitId: notes[] }.
             setNotesByVisit(
                 Object.fromEntries(
                     notesEntries,
@@ -175,6 +184,7 @@ export default function ClientDetails() {
         }
     }
 
+    // Create a new therapy visit for the current client.
     async function handleCreateVisit(
         event: FormEvent<HTMLFormElement>,
     ) {
@@ -201,11 +211,13 @@ export default function ClientDetails() {
         setError('')
 
         try {
+            // Resolve the authenticated user's linked doctor profile.
             const doctor =
                 await getDoctorByUserId(
                     Number(userId),
                 )
 
+            // A visit needs both the doctor and client database IDs.
             const newVisit =
                 await createVisit({
                     doctorId: doctor.id,
@@ -214,6 +226,7 @@ export default function ClientDetails() {
                     service,
                 })
 
+            // Add the newly created visit immediately without reloading the page.
             setVisits(
                 (currentVisits) => [
                     newVisit,
@@ -221,6 +234,7 @@ export default function ClientDetails() {
                 ],
             )
 
+            // A new visit starts with an empty note collection.
             setNotesByVisit(
                 (currentNotes) => ({
                     ...currentNotes,
@@ -246,12 +260,14 @@ export default function ClientDetails() {
         }
     }
 
+    // Create a private note linked to one specific visit.
     async function handleCreateNote(
         event: FormEvent<HTMLFormElement>,
         visitId: number,
     ) {
         event.preventDefault()
 
+        // Remove unnecessary spaces and prevent empty notes.
         const normalizedNote =
             noteText.trim()
 
@@ -270,6 +286,7 @@ export default function ClientDetails() {
                     normalizedNote,
                 })
 
+            // Add the new note only to the visit it belongs to.
             setNotesByVisit(
                 (currentNotes) => ({
                     ...currentNotes,
@@ -303,6 +320,7 @@ export default function ClientDetails() {
         }
     }
 
+    // Clear authentication data and return to the login page.
     function handleLogout() {
         logout()
 
@@ -337,6 +355,7 @@ export default function ClientDetails() {
         )
     }
 
+    // Build the profile avatar from the client's first and last initials.
     function getInitials(): string {
         if (!client) {
             return 'Θ'
@@ -349,6 +368,7 @@ export default function ClientDetails() {
             .toUpperCase()}`
     }
 
+    // Display the authenticated doctor's email in the sidebar.
     const doctorEmail =
         localStorage.getItem(
             'email',
@@ -369,6 +389,7 @@ export default function ClientDetails() {
         )
     }
 
+    // Show a full-page error when the client itself could not be loaded.
     if (
         error &&
         !client
@@ -405,6 +426,8 @@ export default function ClientDetails() {
 
     return (
         <main className="doctor-dashboard-page">
+
+            {/* Doctor navigation sidebar */}
             <aside className="doctor-sidebar">
                 <Link
                     to="/doctor/dashboard"
@@ -489,7 +512,10 @@ export default function ClientDetails() {
                 </div>
             </aside>
 
+            {/* Client profile and therapy history */}
             <section className="client-details-content">
+
+                {/* Navigation back to the client list */}
                 <div className="details-breadcrumb">
                     <Link
                         to="/doctor/clients"
@@ -506,6 +532,7 @@ export default function ClientDetails() {
                     </strong>
                 </div>
 
+                {/* Client profile summary */}
                 <section className="client-profile-card">
                     <div className="client-profile-main">
                         <div className="client-profile-avatar">
@@ -562,6 +589,7 @@ export default function ClientDetails() {
                     </div>
                 </section>
 
+                {/* Therapy history controls */}
                 <div className="client-history-header">
                     <div>
                         <span className="history-eyebrow">
@@ -598,6 +626,7 @@ export default function ClientDetails() {
                     </button>
                 </div>
 
+                {/* Form for manually adding a new therapy session */}
                 {showVisitForm && (
                     <form
                         className="new-visit-form"
@@ -726,6 +755,7 @@ export default function ClientDetails() {
                     </form>
                 )}
 
+                {/* Request errors that occur after the client has already loaded */}
                 {error && (
                     <div
                         className="client-details-alert"
@@ -735,6 +765,7 @@ export default function ClientDetails() {
                     </div>
                 )}
 
+                {/* Complete visit history for this client */}
                 <section className="client-history">
                     {visits.length ===
                     0 ? (
@@ -762,6 +793,7 @@ export default function ClientDetails() {
                                     visit,
                                     index,
                                 ) => {
+                                    // Retrieve only the notes that belong to this visit.
                                     const visitNotes =
                                         notesByVisit[
                                             visit.id
@@ -774,6 +806,7 @@ export default function ClientDetails() {
                                             }
                                             className="visit-card"
                                         >
+                                            {/* Timeline numbering follows the visit list order */}
                                             <div className="visit-timeline">
                                                 <div className="visit-number">
                                                     {
@@ -805,6 +838,7 @@ export default function ClientDetails() {
                                                         type="button"
                                                         className="add-note-button"
                                                         onClick={() => {
+                                                            // Open the note form only for this specific visit.
                                                             setActiveNoteVisitId(
                                                                 visit.id,
                                                             )
@@ -822,6 +856,7 @@ export default function ClientDetails() {
                                                     </button>
                                                 </header>
 
+                                                {/* Only one visit note form is active at a time */}
                                                 {activeNoteVisitId ===
                                                     visit.id && (
                                                         <form
@@ -837,10 +872,10 @@ export default function ClientDetails() {
                                                         >
                                                             <div className="note-form-heading">
                                                                 <div>
-                                                                <span>
-                                                                    PRIVATE
-                                                                    NOTE
-                                                                </span>
+                                                                    <span>
+                                                                        PRIVATE
+                                                                        NOTE
+                                                                    </span>
 
                                                                     <h4>
                                                                         Νέα
@@ -902,6 +937,7 @@ export default function ClientDetails() {
                                                         </form>
                                                     )}
 
+                                                {/* Notes stored for the current visit */}
                                                 <div className="visit-notes-section">
                                                     <div className="visit-notes-heading">
                                                         <span>

@@ -29,6 +29,7 @@ export default function Login() {
     const [loading, setLoading] =
         useState(false)
 
+    // Authenticate the user and redirect them according to their role.
     async function handleSubmit(
         event: FormEvent<HTMLFormElement>,
     ) {
@@ -38,16 +39,19 @@ export default function Login() {
         setLoading(true)
 
         try {
+            // AuthService handles the API request and stores the returned session data.
             const response = await login({
                 email,
                 password,
             })
 
+            // Doctors enter their dashboard after a successful login.
             if (response.role === 'DOCTOR') {
                 navigate('/doctor/dashboard')
                 return
             }
 
+            // Client users are redirected to their appointment area.
             navigate('/my-appointments')
         } catch (error) {
             if (error instanceof Error) {
@@ -64,6 +68,8 @@ export default function Login() {
 
     return (
         <main className="login-page">
+
+            {/* Link back to the public home page */}
             <Link
                 to="/"
                 className="login-brand"
@@ -78,6 +84,7 @@ export default function Login() {
                 </span>
             </Link>
 
+            {/* Authentication form */}
             <section className="login-card">
                 <div className="login-card-header">
                     <div className="login-logo-wrapper">
@@ -142,6 +149,7 @@ export default function Login() {
                         />
                     </div>
 
+                    {/* Show authentication errors returned by the backend */}
                     {error && (
                         <div
                             className="login-error"

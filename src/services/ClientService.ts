@@ -14,7 +14,7 @@ export async function getClientById(
         `/api/clients/${clientId}`,
     )
 }
-
+// Search clients using a normalized query, or load all clients when it is empty.
 export async function searchClients(
     query: string,
 ): Promise<Client[]> {

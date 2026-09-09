@@ -17,12 +17,15 @@ export default function ProtectedRoute({
                                            children,
                                            allowedRoles,
                                        }: ProtectedRouteProps) {
+
+    // Redirect unauthenticated users to the login page.
     if (!isAuthenticated()) {
         return <Navigate to="/login" replace />
     }
 
     const role = getRole()
 
+    // Prevent authenticated users from accessing routes outside their role.
     if (
         allowedRoles &&
         (!role || !allowedRoles.includes(role as Role))
@@ -30,5 +33,6 @@ export default function ProtectedRoute({
         return <Navigate to="/" replace />
     }
 
+    // Render the protected page when authentication and role checks succeed.
     return children
 }

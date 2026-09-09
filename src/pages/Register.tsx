@@ -51,6 +51,7 @@ export default function Register() {
     const [loading, setLoading] =
         useState(false)
 
+    // Validate the form and create a new client account.
     async function handleSubmit(
         event: FormEvent<HTMLFormElement>,
     ) {
@@ -58,6 +59,7 @@ export default function Register() {
 
         setError('')
 
+        // Prevent registration when the two password fields do not match.
         if (
             password !==
             confirmPassword
@@ -69,6 +71,7 @@ export default function Register() {
             return
         }
 
+        // Apply a minimum password length before sending the request.
         if (password.length < 8) {
             setError(
                 'Ο κωδικός πρέπει να έχει τουλάχιστον 8 χαρακτήρες.',
@@ -80,6 +83,7 @@ export default function Register() {
         setLoading(true)
 
         try {
+            // Trim user input before sending the registration data to the backend.
             await register({
                 email: email.trim(),
                 password,
@@ -90,6 +94,7 @@ export default function Register() {
                 phone: phone.trim(),
             })
 
+            // After registration, continue directly to appointment booking.
             navigate('/booking')
         } catch (error) {
             if (
@@ -110,6 +115,8 @@ export default function Register() {
 
     return (
         <main className="register-page">
+
+            {/* Link back to the public home page */}
             <Link
                 to="/"
                 className="register-brand"
@@ -124,6 +131,7 @@ export default function Register() {
                 </span>
             </Link>
 
+            {/* Client registration form */}
             <section className="register-card">
                 <div className="register-header">
                     <div className="register-logo-wrapper">
@@ -278,6 +286,7 @@ export default function Register() {
                         </div>
                     </div>
 
+                    {/* Show validation or backend registration errors */}
                     {error && (
                         <div
                             className="register-error"

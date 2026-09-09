@@ -26,6 +26,7 @@ export async function createAvailability(
     )
 }
 
+// Replace an existing availability record with the updated values.
 export async function updateAvailability(
     availabilityId: number,
     request: AvailabilityUpdateRequest,

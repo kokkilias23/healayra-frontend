@@ -42,6 +42,7 @@ export default function Clients() {
   const [error, setError] =
       useState('')
 
+  // Load all clients when the page is first rendered.
   useEffect(() => {
     loadClients()
   }, [])
@@ -68,14 +69,17 @@ export default function Clients() {
     }
   }
 
+  // Search clients through the backend using the normalized query.
   async function handleSearch(
       event: FormEvent<HTMLFormElement>,
   ) {
     event.preventDefault()
 
+    // Remove leading and trailing spaces before searching.
     const normalizedQuery =
         query.trim()
 
+    // An empty search restores the full client list.
     if (!normalizedQuery) {
       await loadClients()
       return
@@ -104,16 +108,19 @@ export default function Clients() {
     }
   }
 
+  // Clear the search field and reload all clients.
   async function handleClearSearch() {
     setQuery('')
     await loadClients()
   }
 
+  // Clear authentication data and return to the login page.
   function handleLogout() {
     logout()
     navigate('/login')
   }
 
+  // Build avatar initials from the client's first and last name.
   function getInitials(
       client: Client,
   ): string {
@@ -130,11 +137,13 @@ export default function Clients() {
     return `${firstInitial}${lastInitial}`
   }
 
+  // Display the authenticated doctor's email in the sidebar.
   const doctorEmail =
       localStorage.getItem('email')
 
   return (
       <main className="doctor-dashboard-page">
+        {/* Doctor navigation sidebar */}
         <aside className="doctor-sidebar">
           <Link
               to="/doctor/dashboard"
@@ -249,7 +258,7 @@ export default function Clients() {
               </small>
             </div>
           </header>
-
+          {/* Client search controls */}
           <section className="clients-search-panel">
             <div className="clients-search-copy">
                         <span>
@@ -312,7 +321,8 @@ export default function Clients() {
                 {error}
               </div>
           )}
-
+          
+          {/* Loading, empty and client list states */}
           {loading ? (
               <div className="clients-loading">
                 <div className="clients-loading-icon">

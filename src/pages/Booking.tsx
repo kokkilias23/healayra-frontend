@@ -4,10 +4,13 @@ import {
 } from 'react'
 
 import {
+  Link,
   useNavigate,
 } from 'react-router-dom'
 
 import DatePicker from 'react-datepicker'
+
+import logo from '../assets/healayra-logo.png'
 
 import {
   getDoctors,
@@ -20,6 +23,10 @@ import {
 import {
   createAppointment,
 } from '../services/AppointmentService'
+
+import {
+  logout,
+} from '../services/AuthService'
 
 import type {
   Doctor,
@@ -34,12 +41,28 @@ import 'react-datepicker/dist/react-datepicker.css'
 import '../styles/Booking.css'
 
 const services = [
-  'Πρώτη Αξιολογητική Συνεδρία',
-  'Ατομική Συνεδρία',
-  'Online Συνεδρία',
+  {
+    name: 'Πρώτη Αξιολογητική Συνεδρία',
+    description:
+        'Μια πρώτη συνάντηση γνωριμίας και αξιολόγησης των αναγκών σας.',
+    icon: '○',
+  },
+  {
+    name: 'Ατομική Συνεδρία',
+    description:
+        'Προσωπική θεραπευτική συνεδρία σε ένα ασφαλές περιβάλλον.',
+    icon: '◡',
+  },
+  {
+    name: 'Online Συνεδρία',
+    description:
+        'Συνεδρία εξ αποστάσεως με άνεση και ευελιξία.',
+    icon: '⌁',
+  },
 ]
 
-const dayOfWeekMap: Record<number, DayOfWeek> = {
+const dayOfWeekMap:
+    Record<number, DayOfWeek> = {
   0: 'SUNDAY',
   1: 'MONDAY',
   2: 'TUESDAY',
@@ -125,7 +148,9 @@ export default function Booking() {
       )
     } catch (error) {
       if (error instanceof Error) {
-        setError(error.message)
+        setError(
+            error.message,
+        )
       } else {
         setError(
             'Δεν ήταν δυνατή η φόρτωση της διαθεσιμότητας.',
@@ -195,7 +220,8 @@ export default function Booking() {
     )
   }
 
-  function getTimeSlots(): string[] {
+  function getTimeSlots():
+      string[] {
     if (!selectedDate) {
       return []
     }
@@ -225,7 +251,8 @@ export default function Booking() {
     const slots: string[] = []
 
     for (
-        let current = startMinutes;
+        let current =
+            startMinutes;
         current + duration <=
         endMinutes;
         current += duration
@@ -330,7 +357,8 @@ export default function Booking() {
 
     try {
       await createAppointment({
-        doctorId: doctor.id,
+        doctorId:
+        doctor.id,
         appointmentTime:
             formatLocalDateTime(
                 appointmentDateTime,
@@ -346,7 +374,9 @@ export default function Booking() {
       }, 1200)
     } catch (error) {
       if (error instanceof Error) {
-        setError(error.message)
+        setError(
+            error.message,
+        )
       } else {
         setError(
             'Δεν ήταν δυνατή η δημιουργία του ραντεβού.',
@@ -357,209 +387,643 @@ export default function Booking() {
     }
   }
 
+  function handleLogout() {
+    logout()
+
+    navigate('/login')
+  }
+
+  function getStepClass(
+      step: number,
+  ): string {
+    if (
+        step === 1 &&
+        selectedService
+    ) {
+      return 'completed'
+    }
+
+    if (
+        step === 2 &&
+        selectedDate
+    ) {
+      return 'completed'
+    }
+
+    if (
+        step === 3 &&
+        selectedTime
+    ) {
+      return 'completed'
+    }
+
+    if (
+        step === 4 &&
+        success
+    ) {
+      return 'completed'
+    }
+
+    if (
+        step === 1 &&
+        !selectedService
+    ) {
+      return 'active'
+    }
+
+    if (
+        step === 2 &&
+        selectedService &&
+        !selectedDate
+    ) {
+      return 'active'
+    }
+
+    if (
+        step === 3 &&
+        selectedDate &&
+        !selectedTime
+    ) {
+      return 'active'
+    }
+
+    if (
+        step === 4 &&
+        selectedTime
+    ) {
+      return 'active'
+    }
+
+    return ''
+  }
+
   const timeSlots =
       getTimeSlots()
 
   if (loading) {
     return (
-        <section className="booking-page">
+        <main className="booking-loading">
+          <img
+              src={logo}
+              alt="Healayra"
+          />
+
           <p>
-            Φόρτωση...
+            Φόρτωση διαθέσιμων
+            ραντεβού...
           </p>
-        </section>
+        </main>
     )
   }
 
   return (
-      <section className="booking-page">
-        <h1>
-          Κλείσιμο Ραντεβού
-        </h1>
+      <main className="booking-page">
+        <header className="booking-topbar">
+          <Link
+              to="/"
+              className="booking-brand"
+          >
+            <img
+                src={logo}
+                alt="Healayra"
+            />
 
-        {doctor && (
-            <div className="booking-step">
-              <h2>
-                Γιατρός
-              </h2>
+            <span>
+                        HEALAYRA
+                    </span>
+          </Link>
 
-              <p>
-                {doctor.firstName}{' '}
-                {doctor.lastName}
-              </p>
+          <nav className="booking-navigation">
+            <Link to="/">
+              Αρχική
+            </Link>
 
-              <p>
-                {doctor.specialty}
-              </p>
-            </div>
-        )}
+            <Link
+                to="/my-appointments"
+            >
+              Τα ραντεβού μου
+            </Link>
 
-        <div className="booking-step">
-          <h2>
-            1. Επιλέξτε υπηρεσία
-          </h2>
+            <button
+                type="button"
+                onClick={
+                  handleLogout
+                }
+            >
+              Αποσύνδεση
+            </button>
+          </nav>
+        </header>
 
-          <div className="booking-options">
-            {services.map(
-                (service) => (
-                    <button
-                        key={service}
-                        type="button"
-                        onClick={() => {
-                          setSelectedService(
-                              service,
-                          )
+        <section className="booking-hero">
+                <span className="booking-eyebrow">
+                    Appointment Booking
+                </span>
 
-                          setSelectedDate(
-                              null,
-                          )
+          <h1>
+            Κλείστε το επόμενο
+            <span>
+                        {' '}
+              ραντεβού σας.
+                    </span>
+          </h1>
 
-                          setSelectedTime('')
-                          setSuccess(false)
-                        }}
-                        className={
-                          selectedService ===
-                          service
-                              ? 'booking-option selected'
-                              : 'booking-option'
-                        }
-                    >
-                      {service}
-                    </button>
-                ),
-            )}
-          </div>
+          <p>
+            Επιλέξτε υπηρεσία,
+            ημερομηνία και ώρα.
+            Η διαδικασία διαρκεί
+            μόνο λίγα λεπτά.
+          </p>
+        </section>
+
+        <div className="booking-progress">
+          {[1, 2, 3, 4].map(
+              (step) => (
+                  <div
+                      key={step}
+                      className={`booking-progress-step ${getStepClass(
+                          step,
+                      )}`}
+                  >
+                    <div className="progress-number">
+                      {getStepClass(
+                          step,
+                      ) ===
+                      'completed'
+                          ? '✓'
+                          : step}
+                    </div>
+
+                    <span>
+                                {step === 1 &&
+                                    'Υπηρεσία'}
+
+                      {step === 2 &&
+                          'Ημερομηνία'}
+
+                      {step === 3 &&
+                          'Ώρα'}
+
+                      {step === 4 &&
+                          'Επιβεβαίωση'}
+                            </span>
+                  </div>
+              ),
+          )}
         </div>
 
-        {selectedService && (
-            <div className="booking-step">
-              <h2>
-                2. Επιλέξτε διαθέσιμη ημερομηνία
-              </h2>
+        {error && (
+            <div
+                className="booking-alert"
+                role="alert"
+            >
+                    <span>
+                        !
+                    </span>
 
-              <DatePicker
-                  selected={
-                    selectedDate
-                  }
-                  onChange={(
-                      date: Date | null,
-                  ) => {
-                    setSelectedDate(
-                        date,
-                    )
-
-                    setSelectedTime('')
-                    setSuccess(false)
-                  }}
-                  minDate={new Date()}
-                  filterDate={
-                    isAvailableDate
-                  }
-                  dateFormat="dd/MM/yyyy"
-                  placeholderText="Επιλέξτε διαθέσιμη ημερομηνία"
-              />
+              {error}
             </div>
         )}
 
-        {selectedDate && (
-            <div className="booking-step">
-              <h2>
-                3. Επιλέξτε ώρα
-              </h2>
+        <div className="booking-layout">
+          <section className="booking-main">
+            <article className="booking-step">
+              <div className="booking-step-header">
+                            <span className="booking-step-number">
+                                01
+                            </span>
 
-              {timeSlots.length === 0 ? (
-                  <p>
-                    Δεν υπάρχουν διαθέσιμες ώρες
-                    για αυτή την ημέρα.
-                  </p>
-              ) : (
-                  <div className="booking-options">
-                    {timeSlots.map(
-                        (time) => (
-                            <button
-                                key={time}
-                                type="button"
-                                onClick={() => {
-                                  setSelectedTime(
-                                      time,
-                                  )
+                <div>
+                                <span className="booking-step-label">
+                                    Service
+                                </span>
 
-                                  setSuccess(false)
-                                }}
-                                className={
-                                  selectedTime ===
-                                  time
-                                      ? 'booking-option selected'
-                                      : 'booking-option'
-                                }
-                            >
-                              {time}
-                            </button>
-                        ),
-                    )}
-                  </div>
-              )}
-            </div>
-        )}
-
-        {selectedService &&
-            selectedDate &&
-            selectedTime && (
-                <div className="booking-step confirmation">
                   <h2>
-                    4. Επιβεβαίωση Ραντεβού
+                    Επιλέξτε υπηρεσία
                   </h2>
 
-                  <div className="confirmation-details">
-                    <p>
-                      <strong>
-                        Υπηρεσία:
-                      </strong>{' '}
-                      {selectedService}
-                    </p>
+                  <p>
+                    Ποιος τύπος
+                    συνεδρίας σας
+                    ενδιαφέρει;
+                  </p>
+                </div>
+              </div>
 
-                    <p>
-                      <strong>
-                        Ημερομηνία:
-                      </strong>{' '}
-                      {selectedDate
-                          .toLocaleDateString(
-                              'el-GR',
-                          )}
-                    </p>
+              <div className="booking-services">
+                {services.map(
+                    (
+                        service,
+                    ) => (
+                        <button
+                            key={
+                              service.name
+                            }
+                            type="button"
+                            onClick={() => {
+                              setSelectedService(
+                                  service.name,
+                              )
 
-                    <p>
-                      <strong>
-                        Ώρα:
-                      </strong>{' '}
-                      {selectedTime}
-                    </p>
+                              setSelectedDate(
+                                  null,
+                              )
+
+                              setSelectedTime(
+                                  '',
+                              )
+
+                              setSuccess(
+                                  false,
+                              )
+                            }}
+                            className={`service-booking-card ${
+                                selectedService ===
+                                service.name
+                                    ? 'selected'
+                                    : ''
+                            }`}
+                        >
+                                        <span className="service-booking-icon">
+                                            {
+                                              service.icon
+                                            }
+                                        </span>
+
+                          <span className="service-booking-content">
+                                            <strong>
+                                                {
+                                                  service.name
+                                                }
+                                            </strong>
+
+                                            <small>
+                                                {
+                                                  service.description
+                                                }
+                                            </small>
+                                        </span>
+
+                          <span className="service-booking-check">
+                                            {selectedService ===
+                                            service.name
+                                                ? '✓'
+                                                : '○'}
+                                        </span>
+                        </button>
+                    ),
+                )}
+              </div>
+            </article>
+
+            {selectedService && (
+                <article className="booking-step">
+                  <div className="booking-step-header">
+                                <span className="booking-step-number">
+                                    02
+                                </span>
+
+                    <div>
+                                    <span className="booking-step-label">
+                                        Date
+                                    </span>
+
+                      <h2>
+                        Επιλέξτε
+                        ημερομηνία
+                      </h2>
+
+                      <p>
+                        Εμφανίζονται μόνο
+                        οι ημέρες που ο
+                        επαγγελματίας είναι
+                        διαθέσιμος.
+                      </p>
+                    </div>
                   </div>
 
-                  <button
-                      type="button"
-                      className="confirm-booking-btn"
-                      onClick={
-                        handleBooking
-                      }
-                      disabled={
-                          saving ||
-                          success
-                      }
-                  >
-                    {saving
-                        ? 'Αποθήκευση...'
-                        : success
-                            ? 'Το ραντεβού καταχωρήθηκε!'
-                            : 'Επιβεβαίωση Ραντεβού'}
-                  </button>
-                </div>
+                  <div className="booking-datepicker-wrapper">
+                    <DatePicker
+                        selected={
+                          selectedDate
+                        }
+                        onChange={(
+                            date:
+                                Date | null,
+                        ) => {
+                          setSelectedDate(
+                              date,
+                          )
+
+                          setSelectedTime(
+                              '',
+                          )
+
+                          setSuccess(
+                              false,
+                          )
+                        }}
+                        minDate={
+                          new Date()
+                        }
+                        filterDate={
+                          isAvailableDate
+                        }
+                        dateFormat="dd/MM/yyyy"
+                        placeholderText="Επιλέξτε διαθέσιμη ημερομηνία"
+                    />
+
+                    <span className="datepicker-help">
+                                    ◷ Επιλέξτε μία
+                                    διαθέσιμη ημέρα
+                                </span>
+                  </div>
+                </article>
             )}
 
-        {error && (
-            <p role="alert">
-              {error}
-            </p>
-        )}
-      </section>
+            {selectedDate && (
+                <article className="booking-step">
+                  <div className="booking-step-header">
+                                <span className="booking-step-number">
+                                    03
+                                </span>
+
+                    <div>
+                                    <span className="booking-step-label">
+                                        Time
+                                    </span>
+
+                      <h2>
+                        Επιλέξτε ώρα
+                      </h2>
+
+                      <p>
+                        Διαθέσιμα slots
+                        για την επιλεγμένη
+                        ημέρα.
+                      </p>
+                    </div>
+                  </div>
+
+                  {timeSlots.length ===
+                  0 ? (
+                      <div className="no-time-slots">
+                                    <span>
+                                        ◷
+                                    </span>
+
+                        <div>
+                          <strong>
+                            Δεν υπάρχουν
+                            διαθέσιμες ώρες
+                          </strong>
+
+                          <p>
+                            Επιλέξτε άλλη
+                            ημερομηνία.
+                          </p>
+                        </div>
+                      </div>
+                  ) : (
+                      <div className="booking-time-grid">
+                        {timeSlots.map(
+                            (
+                                time,
+                            ) => (
+                                <button
+                                    key={
+                                      time
+                                    }
+                                    type="button"
+                                    onClick={() => {
+                                      setSelectedTime(
+                                          time,
+                                      )
+
+                                      setSuccess(
+                                          false,
+                                      )
+                                    }}
+                                    className={`booking-time-slot ${
+                                        selectedTime ===
+                                        time
+                                            ? 'selected'
+                                            : ''
+                                    }`}
+                                >
+                                                <span>
+                                                    ◷
+                                                </span>
+
+                                  {
+                                    time
+                                  }
+                                </button>
+                            ),
+                        )}
+                      </div>
+                  )}
+                </article>
+            )}
+
+            {selectedService &&
+                selectedDate &&
+                selectedTime && (
+                    <article className="booking-step booking-confirmation">
+                      <div className="booking-step-header">
+                                    <span className="booking-step-number">
+                                        04
+                                    </span>
+
+                        <div>
+                                        <span className="booking-step-label">
+                                            Confirmation
+                                        </span>
+
+                          <h2>
+                            Επιβεβαίωση
+                            Ραντεβού
+                          </h2>
+
+                          <p>
+                            Ελέγξτε τα
+                            στοιχεία πριν
+                            την οριστική
+                            καταχώρηση.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="confirmation-details">
+                        <div>
+                                        <span>
+                                            Υπηρεσία
+                                        </span>
+
+                          <strong>
+                            {
+                              selectedService
+                            }
+                          </strong>
+                        </div>
+
+                        <div>
+                                        <span>
+                                            Ημερομηνία
+                                        </span>
+
+                          <strong>
+                            {selectedDate.toLocaleDateString(
+                                'el-GR',
+                                {
+                                  weekday:
+                                      'long',
+                                  day: 'numeric',
+                                  month: 'long',
+                                },
+                            )}
+                          </strong>
+                        </div>
+
+                        <div>
+                                        <span>
+                                            Ώρα
+                                        </span>
+
+                          <strong>
+                            {
+                              selectedTime
+                            }
+                          </strong>
+                        </div>
+                      </div>
+
+                      <button
+                          type="button"
+                          className="confirm-booking-btn"
+                          onClick={
+                            handleBooking
+                          }
+                          disabled={
+                              saving ||
+                              success
+                          }
+                      >
+                        {saving
+                            ? 'Καταχώρηση...'
+                            : success
+                                ? '✓ Το ραντεβού καταχωρήθηκε'
+                                : 'Επιβεβαίωση Ραντεβού'}
+                      </button>
+                    </article>
+                )}
+          </section>
+
+          <aside className="booking-sidebar">
+            {doctor && (
+                <section className="booking-doctor-card">
+                            <span className="booking-card-label">
+                                Your Professional
+                            </span>
+
+                  <div className="booking-doctor-main">
+                    <div className="booking-doctor-avatar">
+                      {doctor.firstName
+                          .charAt(0)
+                          .toUpperCase()}
+                    </div>
+
+                    <div>
+                      <strong>
+                        {
+                          doctor.firstName
+                        }{' '}
+                        {
+                          doctor.lastName
+                        }
+                      </strong>
+
+                      <span>
+                                        {
+                                          doctor.specialty
+                                        }
+                                    </span>
+                    </div>
+                  </div>
+
+                  <div className="booking-doctor-message">
+                                <span>
+                                    ♡
+                                </span>
+
+                    <p>
+                      Επιλέξτε τον χρόνο
+                      που σας εξυπηρετεί
+                      καλύτερα.
+                    </p>
+                  </div>
+                </section>
+            )}
+
+            <section className="booking-summary-card">
+                        <span className="booking-card-label">
+                            Appointment Summary
+                        </span>
+
+              <h3>
+                Το ραντεβού σας
+              </h3>
+
+              <div className="booking-summary-item">
+                            <span>
+                                Υπηρεσία
+                            </span>
+
+                <strong>
+                  {selectedService ||
+                      'Δεν επιλέχθηκε'}
+                </strong>
+              </div>
+
+              <div className="booking-summary-item">
+                            <span>
+                                Ημερομηνία
+                            </span>
+
+                <strong>
+                  {selectedDate
+                      ? selectedDate.toLocaleDateString(
+                          'el-GR',
+                      )
+                      : 'Δεν επιλέχθηκε'}
+                </strong>
+              </div>
+
+              <div className="booking-summary-item">
+                            <span>
+                                Ώρα
+                            </span>
+
+                <strong>
+                  {selectedTime ||
+                      'Δεν επιλέχθηκε'}
+                </strong>
+              </div>
+
+              <div className="booking-summary-footer">
+                            <span>
+                                ✓
+                            </span>
+
+                <p>
+                  Μετά την καταχώρηση,
+                  το αίτημα θα εμφανιστεί
+                  στα ραντεβού σας.
+                </p>
+              </div>
+            </section>
+          </aside>
+        </div>
+      </main>
   )
 }

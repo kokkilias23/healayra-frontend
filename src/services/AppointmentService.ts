@@ -6,6 +6,7 @@ import type {
     AppointmentStatus,
 } from '../types/Appointment'
 
+// Fetch appointments belonging to a specific doctor.
 export async function getAppointmentsByDoctor(
     doctorId: number,
 ): Promise<Appointment[]> {
@@ -31,7 +32,7 @@ export async function createAppointment(
         },
     )
 }
-
+// Update only the appointment status without replacing the whole appointment.
 export async function updateAppointmentStatus(
     appointmentId: number,
     status: AppointmentStatus,

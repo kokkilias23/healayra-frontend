@@ -8,6 +8,8 @@ import type {
     RegisterRequest,
 } from '../types/Auth'
 
+// Store authentication data returned by the backend
+// so the user remains authenticated between page reloads.
 function saveAuthData(
     response: AuthResponse,
 ): void {
@@ -32,6 +34,7 @@ function saveAuthData(
     )
 }
 
+// Authenticate the user and store the returned JWT/session data.
 export async function login(
     credentials: LoginRequest,
 ): Promise<AuthResponse> {
@@ -50,7 +53,7 @@ export async function login(
 
     return response
 }
-
+// Register a new account and authenticate it immediately.
 export async function register(
     data: RegisterRequest,
 ): Promise<AuthResponse> {
@@ -69,7 +72,7 @@ export async function register(
 
     return response
 }
-
+// Clear all locally stored authentication data.
 export function logout(): void {
     localStorage.removeItem(
         'token',

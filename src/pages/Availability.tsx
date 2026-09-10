@@ -8,7 +8,12 @@ import {
     useNavigate,
 } from 'react-router-dom'
 
-import logo from '../assets/healayra-logo.png'
+import logo
+    from '../assets/healayra-logo.png'
+
+import AvailabilityEditor, {
+    type DayAvailabilityForm,
+} from '../components/availability/AvailabilityEditor'
 
 import {
     getDoctorByUserId,
@@ -34,17 +39,6 @@ import type {
 
 import '../styles/DoctorDashboard.css'
 import '../styles/Availability.css'
-
-// Local form structure used to represent one weekday in the availability editor.
-interface DayAvailabilityForm {
-    id?: number
-    dayOfWeek: DayOfWeek
-    label: string
-    shortLabel: string
-    enabled: boolean
-    startTime: string
-    endTime: string
-}
 
 // Map backend weekday values to the labels displayed in the UI.
 const dayDefinitions: {
@@ -89,7 +83,7 @@ const dayDefinitions: {
     },
 ]
 
-// Create the default weekly schedule before saved backend data is loaded.
+// Create the complete default week before saved backend records are loaded.
 function createInitialAvailability():
     DayAvailabilityForm[] {
     return dayDefinitions.map(
@@ -109,154 +103,196 @@ export default function Availability() {
     const [
         availability,
         setAvailability,
-    ] = useState<DayAvailabilityForm[]>(
-        createInitialAvailability(),
-    )
+    ] =
+        useState<
+            DayAvailabilityForm[]
+        >(
+            createInitialAvailability(),
+        )
 
     const [
         sessionDuration,
         setSessionDuration,
-    ] = useState(50)
+    ] =
+        useState(50)
 
     const [
         doctorId,
         setDoctorId,
-    ] = useState<number | null>(null)
+    ] =
+        useState<number | null>(
+            null,
+        )
 
     const [
         doctor,
         setDoctor,
-    ] = useState<Doctor | null>(null)
+    ] =
+        useState<Doctor | null>(
+            null,
+        )
 
-    const [loading, setLoading] =
+    const [
+        loading,
+        setLoading,
+    ] =
         useState(true)
 
-    const [saving, setSaving] =
+    const [
+        saving,
+        setSaving,
+    ] =
         useState(false)
 
-    const [error, setError] =
+    const [
+        error,
+        setError,
+    ] =
         useState('')
 
-    const [success, setSuccess] =
+    const [
+        success,
+        setSuccess,
+    ] =
         useState('')
 
-    // Load the doctor's saved availability when the page is first rendered.
+    // Load the authenticated doctor and weekly availability when the page opens.
     useEffect(() => {
-        loadAvailability()
-    }, [])
-
-    // Resolve the authenticated doctor and load the weekly schedule from the backend.
-    async function loadAvailability() {
-        // The authenticated account ID is stored locally after login.
-        const userId =
-            localStorage.getItem(
-                'userId',
-            )
-
-        if (!userId) {
-            setError(
-                'Δεν βρέθηκαν στοιχεία συνδεδεμένου γιατρού.',
-            )
-
-            setLoading(false)
-
-            return
-        }
-
-        setLoading(true)
-        setError('')
-
-        try {
-            // Convert the logged-in user account into its linked doctor profile.
-            const doctorData =
-                await getDoctorByUserId(
-                    Number(userId),
+        async function loadAvailability() {
+            // The authenticated account ID is stored locally after login.
+            const userId =
+                localStorage.getItem(
+                    'userId',
                 )
 
-            setDoctor(
-                doctorData,
-            )
+            if (!userId) {
+                setError(
+                    'Δεν βρέθηκαν στοιχεία συνδεδεμένου γιατρού.',
+                )
 
-            setDoctorId(
-                doctorData.id,
-            )
+                setLoading(
+                    false,
+                )
 
-            // Load all saved availability records for this doctor.
-            const data =
-                await getAvailabilityByDoctor(
+                return
+            }
+
+            try {
+                // Convert the authenticated user account into its linked doctor profile.
+                const doctorData =
+                    await getDoctorByUserId(
+                        Number(userId),
+                    )
+
+                setDoctor(
+                    doctorData,
+                )
+
+                setDoctorId(
                     doctorData.id,
                 )
 
-            // Merge backend records with all seven weekdays so every day appears in the UI.
-            const mergedAvailability =
-                dayDefinitions.map(
-                    (day) => {
-                        const existing =
-                            data.find(
-                                (item) =>
-                                    item.dayOfWeek ===
-                                    day.dayOfWeek,
-                            )
+                // Retrieve every saved availability record for this doctor.
+                const data =
+                    await getAvailabilityByDoctor(
+                        doctorData.id,
+                    )
 
-                        // Days not yet saved in the backend start disabled with default hours.
-                        if (!existing) {
-                            return {
-                                ...day,
-                                enabled: false,
-                                startTime: '09:00',
-                                endTime: '17:00',
+                // Merge backend records with all seven weekdays so every day remains visible.
+                const mergedAvailability =
+                    dayDefinitions.map(
+                        (day) => {
+                            const existing =
+                                data.find(
+                                    (
+                                        item,
+                                    ) =>
+                                        item.dayOfWeek ===
+                                        day.dayOfWeek,
+                                )
+
+                            // Days that have never been saved use disabled default working hours.
+                            if (!existing) {
+                                return {
+                                    ...day,
+                                    enabled:
+                                        false,
+                                    startTime:
+                                        '09:00',
+                                    endTime:
+                                        '17:00',
+                                }
                             }
-                        }
 
-                        return {
-                            id: existing.id,
-                            dayOfWeek:
-                            existing.dayOfWeek,
-                            label:
-                            day.label,
-                            shortLabel:
-                            day.shortLabel,
-                            enabled:
-                            existing.enabled,
-                            startTime:
-                                existing.startTime
-                                    .slice(0, 5),
-                            endTime:
-                                existing.endTime
-                                    .slice(0, 5),
-                        }
-                    },
+                            return {
+                                id:
+                                existing.id,
+
+                                dayOfWeek:
+                                existing.dayOfWeek,
+
+                                label:
+                                day.label,
+
+                                shortLabel:
+                                day.shortLabel,
+
+                                enabled:
+                                existing.enabled,
+
+                                startTime:
+                                    existing.startTime
+                                        .slice(
+                                            0,
+                                            5,
+                                        ),
+
+                                endTime:
+                                    existing.endTime
+                                        .slice(
+                                            0,
+                                            5,
+                                        ),
+                            }
+                        },
+                    )
+
+                setAvailability(
+                    mergedAvailability,
                 )
 
-            setAvailability(
-                mergedAvailability,
-            )
-
-            // Session duration is shared across the doctor's weekly availability records.
-            if (data.length > 0) {
-                setSessionDuration(
-                    data[0]
-                        .sessionDuration,
+                // Session duration is shared across the doctor's weekly records.
+                if (
+                    data.length > 0
+                ) {
+                    setSessionDuration(
+                        data[0]
+                            .sessionDuration,
+                    )
+                }
+            } catch (error) {
+                if (
+                    error instanceof Error
+                ) {
+                    setError(
+                        error.message,
+                    )
+                } else {
+                    setError(
+                        'Δεν ήταν δυνατή η φόρτωση της διαθεσιμότητας.',
+                    )
+                }
+            } finally {
+                setLoading(
+                    false,
                 )
             }
-        } catch (error) {
-            if (
-                error instanceof Error
-            ) {
-                setError(
-                    error.message,
-                )
-            } else {
-                setError(
-                    'Δεν ήταν δυνατή η φόρτωση της διαθεσιμότητας.',
-                )
-            }
-        } finally {
-            setLoading(false)
         }
-    }
 
-    // Enable or disable a single weekday without mutating the other days.
+        loadAvailability()
+    }, [])
+
+    // Enable or disable one weekday without mutating the remaining schedule.
     function handleToggleDay(
         index: number,
     ) {
@@ -273,6 +309,7 @@ export default function Availability() {
                         index
                             ? {
                                 ...item,
+
                                 enabled:
                                     !item.enabled,
                             }
@@ -283,7 +320,7 @@ export default function Availability() {
         setSuccess('')
     }
 
-    // Update either the start or end time for one weekday.
+    // Update either the start or end time for one specific weekday.
     function handleTimeChange(
         index: number,
         field:
@@ -304,11 +341,23 @@ export default function Availability() {
                         index
                             ? {
                                 ...item,
+
                                 [field]:
                                 value,
                             }
                             : item,
                 ),
+        )
+
+        setSuccess('')
+    }
+
+    // Update the shared session duration and mark the current schedule as changed.
+    function handleSessionDurationChange(
+        duration: number,
+    ) {
+        setSessionDuration(
+            duration,
         )
 
         setSuccess('')
@@ -320,7 +369,7 @@ export default function Availability() {
             return
         }
 
-        // Validate time ranges only for weekdays that are currently enabled.
+        // Validate working hours only for weekdays that currently accept appointments.
         const invalidDay =
             availability.find(
                 (item) =>
@@ -342,38 +391,48 @@ export default function Availability() {
         setSuccess('')
 
         try {
-            // Save all weekdays concurrently to reduce the total waiting time.
+            // Save all weekday records concurrently to reduce total waiting time.
             const savedAvailability =
                 await Promise.all(
                     availability.map(
-                        async (item) => {
-                            // Existing backend records are updated when an ID already exists.
+                        async (
+                            item,
+                        ) => {
+                            // Existing records are updated when a backend ID is already known.
                             if (item.id) {
                                 return updateAvailability(
                                     item.id,
                                     {
                                         startTime:
                                         item.startTime,
+
                                         endTime:
                                         item.endTime,
+
                                         sessionDuration,
+
                                         enabled:
                                         item.enabled,
                                     },
                                 )
                             }
 
-                            // Weekdays without an ID have not been saved yet and must be created.
+                            // Weekdays without an ID have never been persisted and must be created.
                             return createAvailability(
                                 {
                                     doctorId,
+
                                     dayOfWeek:
                                     item.dayOfWeek,
+
                                     startTime:
                                     item.startTime,
+
                                     endTime:
                                     item.endTime,
+
                                     sessionDuration,
+
                                     enabled:
                                     item.enabled,
                                 },
@@ -382,7 +441,7 @@ export default function Availability() {
                     ),
                 )
 
-            // Synchronize the local state with the records returned by the backend.
+            // Synchronize local IDs, enabled state and times with backend responses.
             setAvailability(
                 (
                     currentAvailability,
@@ -404,15 +463,20 @@ export default function Availability() {
 
                             return {
                                 ...item,
-                                id: saved.id,
+
+                                id:
+                                saved.id,
+
                                 enabled:
                                 saved.enabled,
+
                                 startTime:
                                     saved.startTime
                                         .slice(
                                             0,
                                             5,
                                         ),
+
                                 endTime:
                                     saved.endTime
                                         .slice(
@@ -440,15 +504,19 @@ export default function Availability() {
                 )
             }
         } finally {
-            setSaving(false)
+            setSaving(
+                false,
+            )
         }
     }
 
-    // Clear authentication data and return the user to the login page.
+    // Clear authentication data and return to the login page.
     function handleLogout() {
         logout()
 
-        navigate('/login')
+        navigate(
+            '/login',
+        )
     }
 
     // Count enabled weekdays for the summary displayed at the top of the page.
@@ -475,7 +543,6 @@ export default function Availability() {
 
     return (
         <main className="doctor-dashboard-page">
-
             {/* Doctor navigation sidebar */}
             <aside className="doctor-sidebar">
                 <Link
@@ -492,9 +559,11 @@ export default function Availability() {
                     </span>
                 </Link>
 
+                {/* Display the authenticated doctor's profile information */}
                 <div className="doctor-profile">
                     <div className="doctor-avatar">
-                        {doctor?.firstName
+                        {doctor
+                                ?.firstName
                                 ?.charAt(0)
                                 .toUpperCase() ??
                             'D'}
@@ -508,7 +577,8 @@ export default function Availability() {
                         </strong>
 
                         <span>
-                            {doctor?.specialty ||
+                            {doctor
+                                    ?.specialty ||
                                 'Επαγγελματίας Υγείας'}
                         </span>
                     </div>
@@ -586,7 +656,7 @@ export default function Availability() {
                         </p>
                     </div>
 
-                    {/* Quick summary of active days and session duration */}
+                    {/* Quick summary of the current weekly schedule */}
                     <div className="availability-summary">
                         <div>
                             <span>
@@ -608,7 +678,9 @@ export default function Availability() {
                             </span>
 
                             <strong>
-                                {sessionDuration}
+                                {
+                                    sessionDuration
+                                }
                             </strong>
 
                             <small>
@@ -618,252 +690,26 @@ export default function Availability() {
                     </div>
                 </header>
 
-                {/* Session duration used to calculate available booking slots */}
-                <section className="duration-card">
-                    <div className="duration-info">
-                        <div className="duration-icon">
-                            ◷
-                        </div>
+                {/* AvailabilityEditor owns the complete weekly schedule UI */}
+                <AvailabilityEditor
+                    availability={
+                        availability
+                    }
+                    sessionDuration={
+                        sessionDuration
+                    }
+                    onSessionDurationChange={
+                        handleSessionDurationChange
+                    }
+                    onToggleDay={
+                        handleToggleDay
+                    }
+                    onTimeChange={
+                        handleTimeChange
+                    }
+                />
 
-                        <div>
-                            <span className="duration-label">
-                                Session Duration
-                            </span>
-
-                            <h2>
-                                Διάρκεια συνεδρίας
-                            </h2>
-
-                            <p>
-                                Η διάρκεια χρησιμοποιείται
-                                για τον υπολογισμό των
-                                διαθέσιμων slots.
-                            </p>
-                        </div>
-                    </div>
-
-                    <div className="duration-select-wrapper">
-                        <select
-                            id="session-duration"
-                            aria-label="Διάρκεια συνεδρίας"
-                            value={
-                                sessionDuration
-                            }
-                            onChange={(
-                                event,
-                            ) => {
-                                setSessionDuration(
-                                    Number(
-                                        event
-                                            .target
-                                            .value,
-                                    ),
-                                )
-
-                                setSuccess('')
-                            }}
-                        >
-                            <option value={30}>
-                                30 λεπτά
-                            </option>
-
-                            <option value={45}>
-                                45 λεπτά
-                            </option>
-
-                            <option value={50}>
-                                50 λεπτά
-                            </option>
-
-                            <option value={60}>
-                                60 λεπτά
-                            </option>
-
-                            <option value={90}>
-                                90 λεπτά
-                            </option>
-                        </select>
-                    </div>
-                </section>
-
-                <div className="availability-section-heading">
-                    <div>
-                        <span>
-                            Weekly Schedule
-                        </span>
-
-                        <h2>
-                            Εβδομαδιαίο Πρόγραμμα
-                        </h2>
-
-                        <p>
-                            Ενεργοποιήστε τις ημέρες
-                            που δέχεστε ραντεβού και
-                            ορίστε το ωράριό σας.
-                        </p>
-                    </div>
-                </div>
-
-                {/* Weekly availability editor */}
-                <section className="availability-list">
-                    {availability.map(
-                        (
-                            item,
-                            index,
-                        ) => (
-                            <article
-                                key={
-                                    item.dayOfWeek
-                                }
-                                className={`availability-card ${
-                                    item.enabled
-                                        ? 'active'
-                                        : 'inactive'
-                                }`}
-                            >
-                                <div className="availability-day">
-                                    <div className="availability-day-info">
-                                        <div className="availability-day-icon">
-                                            {
-                                                item.shortLabel
-                                            }
-                                        </div>
-
-                                        <div>
-                                            <h2>
-                                                {
-                                                    item.label
-                                                }
-                                            </h2>
-
-                                            <span>
-                                                {item.enabled
-                                                    ? 'Διαθέσιμη για ραντεβού'
-                                                    : 'Μη διαθέσιμη ημέρα'}
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    <button
-                                        type="button"
-                                        className={`availability-switch ${
-                                            item.enabled
-                                                ? 'enabled'
-                                                : ''
-                                        }`}
-                                        onClick={() =>
-                                            handleToggleDay(
-                                                index,
-                                            )
-                                        }
-                                        aria-pressed={
-                                            item.enabled
-                                        }
-                                    >
-                                        <span className="switch-track">
-                                            <span className="switch-circle" />
-                                        </span>
-
-                                        <span className="switch-label">
-                                            {item.enabled
-                                                ? 'Ενεργή'
-                                                : 'Ανενεργή'}
-                                        </span>
-                                    </button>
-                                </div>
-
-                                {/* Time controls are visible only for enabled weekdays */}
-                                {item.enabled && (
-                                    <div className="time-range">
-                                        <div className="time-field">
-                                            <label
-                                                htmlFor={`start-${index}`}
-                                            >
-                                                <span>
-                                                    Από
-                                                </span>
-
-                                                Ώρα έναρξης
-                                            </label>
-
-                                            <input
-                                                id={`start-${index}`}
-                                                type="time"
-                                                value={
-                                                    item.startTime
-                                                }
-                                                onChange={(
-                                                    event,
-                                                ) =>
-                                                    handleTimeChange(
-                                                        index,
-                                                        'startTime',
-                                                        event
-                                                            .target
-                                                            .value,
-                                                    )
-                                                }
-                                            />
-                                        </div>
-
-                                        <div className="time-separator">
-                                            →
-                                        </div>
-
-                                        <div className="time-field">
-                                            <label
-                                                htmlFor={`end-${index}`}
-                                            >
-                                                <span>
-                                                    Έως
-                                                </span>
-
-                                                Ώρα λήξης
-                                            </label>
-
-                                            <input
-                                                id={`end-${index}`}
-                                                type="time"
-                                                value={
-                                                    item.endTime
-                                                }
-                                                onChange={(
-                                                    event,
-                                                ) =>
-                                                    handleTimeChange(
-                                                        index,
-                                                        'endTime',
-                                                        event
-                                                            .target
-                                                            .value,
-                                                    )
-                                                }
-                                            />
-                                        </div>
-
-                                        <div className="availability-hours-preview">
-                                            <span>
-                                                Ωράριο
-                                            </span>
-
-                                            <strong>
-                                                {
-                                                    item.startTime
-                                                }
-                                                {' – '}
-                                                {
-                                                    item.endTime
-                                                }
-                                            </strong>
-                                        </div>
-                                    </div>
-                                )}
-                            </article>
-                        ),
-                    )}
-                </section>
-
-                {/* Error message returned by validation or backend requests */}
+                {/* Display validation or backend errors without leaving the page */}
                 {error && (
                     <div
                         className="availability-alert error"
@@ -877,7 +723,7 @@ export default function Availability() {
                     </div>
                 )}
 
-                {/* Confirmation shown after a successful save */}
+                {/* Confirm that the latest schedule was successfully persisted */}
                 {success && (
                     <div className="availability-alert success">
                         <span>
@@ -888,7 +734,7 @@ export default function Availability() {
                     </div>
                 )}
 
-                {/* Save bar applies the current local changes to the backend */}
+                {/* Persist all current local schedule changes */}
                 <div className="availability-save-bar">
                     <div>
                         <strong>

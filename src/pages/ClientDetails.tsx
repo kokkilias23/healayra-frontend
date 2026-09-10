@@ -10,7 +10,17 @@ import {
     useParams,
 } from 'react-router-dom'
 
-import logo from '../assets/healayra-logo.png'
+import logo
+    from '../assets/healayra-logo.png'
+
+import DoctorSidebar
+    from '../components/client-details/DoctorSidebar'
+
+import NewVisitForm
+    from '../components/client-details/NewVisitForm'
+
+import VisitHistory
+    from '../components/client-details/VisitHistory'
 
 import {
     getClientById,
@@ -51,83 +61,119 @@ import '../styles/ClientDetails.css'
 
 export default function ClientDetails() {
     // Read the client ID from the /doctor/clients/:id route.
-    const { id } = useParams()
+    const { id } =
+        useParams()
 
     const navigate =
         useNavigate()
 
-    const [client, setClient] =
-        useState<Client | null>(null)
+    // Convert the route parameter once and derive whether it is usable.
+    const clientId =
+        id
+            ? Number(id)
+            : null
 
-    const [visits, setVisits] =
+    const hasInvalidClientId =
+        clientId === null ||
+        Number.isNaN(clientId)
+
+    const [
+        client,
+        setClient,
+    ] =
+        useState<Client | null>(
+            null,
+        )
+
+    const [
+        visits,
+        setVisits,
+    ] =
         useState<Visit[]>([])
 
-    // Store each visit's notes using the visit ID as the object key.
+    // Store notes by visit ID so each session keeps its own note collection.
     const [
         notesByVisit,
         setNotesByVisit,
-    ] = useState<Record<number, Note[]>>({})
+    ] =
+        useState<
+            Record<number, Note[]>
+        >({})
 
-    const [loading, setLoading] =
+    const [
+        loading,
+        setLoading,
+    ] =
         useState(true)
 
-    const [error, setError] =
+    const [
+        error,
+        setError,
+    ] =
         useState('')
 
     const [
         showVisitForm,
         setShowVisitForm,
-    ] = useState(false)
+    ] =
+        useState(false)
 
     const [
         visitTime,
         setVisitTime,
-    ] = useState('')
+    ] =
+        useState('')
 
-    const [service, setService] =
+    const [
+        service,
+        setService,
+    ] =
         useState('')
 
     const [
         savingVisit,
         setSavingVisit,
-    ] = useState(false)
+    ] =
+        useState(false)
 
-    // Tracks which visit currently has its note form open.
+    // Track which visit currently has its private note form open.
     const [
         activeNoteVisitId,
         setActiveNoteVisitId,
-    ] = useState<number | null>(null)
+    ] =
+        useState<number | null>(
+            null,
+        )
 
     const [
         noteText,
         setNoteText,
-    ] = useState('')
+    ] =
+        useState('')
 
     const [
         savingNote,
         setSavingNote,
-    ] = useState(false)
+    ] =
+        useState(false)
 
-    // Reload the client details whenever the route client ID changes.
+    // Reload the client profile whenever a valid route client ID changes.
     useEffect(() => {
-        if (!id) {
-            setError(
-                'Δεν βρέθηκε αναγνωριστικό θεραπευόμενου.',
-            )
-
-            setLoading(false)
-
+        if (
+            clientId === null ||
+            Number.isNaN(clientId)
+        ) {
             return
         }
 
         loadClientDetails(
-            Number(id),
+            clientId,
         )
-    }, [id])
+    }, [clientId])
 
-    // Load the client profile and visit history in parallel.
+    // Load the client and visit history in parallel.
     async function loadClientDetails(
-        clientId: number,
+        targetClientId: number,
     ) {
         setLoading(true)
         setError('')
@@ -136,25 +182,37 @@ export default function ClientDetails() {
             const [
                 clientData,
                 visitsData,
-            ] = await Promise.all([
-                getClientById(clientId),
-                getVisitsByClient(clientId),
-            ])
+            ] =
+                await Promise.all([
+                    getClientById(
+                        targetClientId,
+                    ),
 
-            setClient(clientData)
-            setVisits(visitsData)
+                    getVisitsByClient(
+                        targetClientId,
+                    ),
+                ])
 
-            // Load the notes associated with every visit concurrently.
+            setClient(
+                clientData,
+            )
+
+            setVisits(
+                visitsData,
+            )
+
+            // Load notes for every visit concurrently instead of one request at a time.
             const notesEntries =
                 await Promise.all(
                     visitsData.map(
-                        async (visit) => {
+                        async (
+                            visit,
+                        ) => {
                             const notes =
                                 await getNotesByVisit(
                                     visit.id,
                                 )
 
-                            // Return [visitId, notes] pairs so they can become an object.
                             return [
                                 visit.id,
                                 notes,
@@ -163,14 +221,16 @@ export default function ClientDetails() {
                     ),
                 )
 
-            // Convert the [visitId, notes] pairs into { visitId: notes[] }.
+            // Convert [visitId, notes] pairs into a lookup object.
             setNotesByVisit(
                 Object.fromEntries(
                     notesEntries,
                 ),
             )
         } catch (error) {
-            if (error instanceof Error) {
+            if (
+                error instanceof Error
+            ) {
                 setError(
                     error.message,
                 )
@@ -180,13 +240,26 @@ export default function ClientDetails() {
                 )
             }
         } finally {
-            setLoading(false)
+            setLoading(
+                false,
+            )
         }
     }
 
-    // Create a new therapy visit for the current client.
+    // Close the visit form and clear any unfinished input.
+    function handleCancelVisitForm() {
+        setShowVisitForm(
+            false,
+        )
+
+        setVisitTime('')
+        setService('')
+    }
+
+    // Create a new therapy visit for the currently displayed client.
     async function handleCreateVisit(
-        event: FormEvent<HTMLFormElement>,
+        event:
+        FormEvent<HTMLFormElement>,
     ) {
         event.preventDefault()
 
@@ -207,46 +280,59 @@ export default function ClientDetails() {
             return
         }
 
-        setSavingVisit(true)
+        setSavingVisit(
+            true,
+        )
+
         setError('')
 
         try {
-            // Resolve the authenticated user's linked doctor profile.
+            // Resolve the authenticated user's doctor profile before creating the visit.
             const doctor =
                 await getDoctorByUserId(
                     Number(userId),
                 )
 
-            // A visit needs both the doctor and client database IDs.
             const newVisit =
                 await createVisit({
-                    doctorId: doctor.id,
-                    clientId: client.id,
+                    doctorId:
+                    doctor.id,
+
+                    clientId:
+                    client.id,
+
                     visitTime,
+
                     service,
                 })
 
-            // Add the newly created visit immediately without reloading the page.
+            // Add the new visit immediately without reloading the entire page.
             setVisits(
-                (currentVisits) => [
+                (
+                    currentVisits,
+                ) => [
                     newVisit,
                     ...currentVisits,
                 ],
             )
 
-            // A new visit starts with an empty note collection.
+            // A newly created visit starts with no private notes.
             setNotesByVisit(
-                (currentNotes) => ({
+                (
+                    currentNotes,
+                ) => ({
                     ...currentNotes,
-                    [newVisit.id]: [],
+
+                    [newVisit.id]:
+                        [],
                 }),
             )
 
-            setVisitTime('')
-            setService('')
-            setShowVisitForm(false)
+            handleCancelVisitForm()
         } catch (error) {
-            if (error instanceof Error) {
+            if (
+                error instanceof Error
+            ) {
                 setError(
                     error.message,
                 )
@@ -256,18 +342,21 @@ export default function ClientDetails() {
                 )
             }
         } finally {
-            setSavingVisit(false)
+            setSavingVisit(
+                false,
+            )
         }
     }
 
-    // Create a private note linked to one specific visit.
+    // Create a private therapeutic note linked to one specific visit.
     async function handleCreateNote(
-        event: FormEvent<HTMLFormElement>,
+        event:
+        FormEvent<HTMLFormElement>,
         visitId: number,
     ) {
         event.preventDefault()
 
-        // Remove unnecessary spaces and prevent empty notes.
+        // Remove unnecessary whitespace and prevent empty notes.
         const normalizedNote =
             noteText.trim()
 
@@ -275,23 +364,31 @@ export default function ClientDetails() {
             return
         }
 
-        setSavingNote(true)
+        setSavingNote(
+            true,
+        )
+
         setError('')
 
         try {
             const newNote =
                 await createNote({
                     visitId,
+
                     content:
                     normalizedNote,
                 })
 
-            // Add the new note only to the visit it belongs to.
+            // Update only the notes collection that belongs to this visit.
             setNotesByVisit(
-                (currentNotes) => ({
+                (
+                    currentNotes,
+                ) => ({
                     ...currentNotes,
+
                     [visitId]: [
                         newNote,
+
                         ...(
                             currentNotes[
                                 visitId
@@ -301,12 +398,11 @@ export default function ClientDetails() {
                 }),
             )
 
-            setNoteText('')
-            setActiveNoteVisitId(
-                null,
-            )
+            handleCloseNoteForm()
         } catch (error) {
-            if (error instanceof Error) {
+            if (
+                error instanceof Error
+            ) {
                 setError(
                     error.message,
                 )
@@ -316,42 +412,38 @@ export default function ClientDetails() {
                 )
             }
         } finally {
-            setSavingNote(false)
+            setSavingNote(
+                false,
+            )
         }
+    }
+
+    // Open a fresh note form for the selected visit.
+    function handleOpenNoteForm(
+        visitId: number,
+    ) {
+        setActiveNoteVisitId(
+            visitId,
+        )
+
+        setNoteText('')
+    }
+
+    // Close the active note form and discard unfinished text.
+    function handleCloseNoteForm() {
+        setActiveNoteVisitId(
+            null,
+        )
+
+        setNoteText('')
     }
 
     // Clear authentication data and return to the login page.
     function handleLogout() {
         logout()
 
-        navigate('/login')
-    }
-
-    function formatVisitDate(
-        visitTime: string,
-    ): string {
-        return new Date(
-            visitTime,
-        ).toLocaleString(
-            'el-GR',
-            {
-                dateStyle: 'medium',
-                timeStyle: 'short',
-            },
-        )
-    }
-
-    function formatNoteDate(
-        createdAt: string,
-    ): string {
-        return new Date(
-            createdAt,
-        ).toLocaleString(
-            'el-GR',
-            {
-                dateStyle: 'short',
-                timeStyle: 'short',
-            },
+        navigate(
+            '/login',
         )
     }
 
@@ -368,11 +460,40 @@ export default function ClientDetails() {
             .toUpperCase()}`
     }
 
-    // Display the authenticated doctor's email in the sidebar.
+    // Display the authenticated doctor's email inside the shared sidebar.
     const doctorEmail =
         localStorage.getItem(
             'email',
         )
+
+    // Invalid route parameters are derived directly instead of stored in state.
+    if (hasInvalidClientId) {
+        return (
+            <main className="client-details-loading">
+                <img
+                    src={logo}
+                    alt="Healayra"
+                />
+
+                <h2>
+                    Ο θεραπευόμενος
+                    δεν βρέθηκε
+                </h2>
+
+                <p role="alert">
+                    Δεν βρέθηκε έγκυρο
+                    αναγνωριστικό θεραπευόμενου.
+                </p>
+
+                <Link
+                    to="/doctor/clients"
+                    className="details-back-button"
+                >
+                    Επιστροφή
+                </Link>
+            </main>
+        )
+    }
 
     if (loading) {
         return (
@@ -426,96 +547,19 @@ export default function ClientDetails() {
 
     return (
         <main className="doctor-dashboard-page">
+            {/* Shared navigation for the doctor workspace */}
+            <DoctorSidebar
+                doctorEmail={
+                    doctorEmail
+                }
+                activePage="clients"
+                onLogout={
+                    handleLogout
+                }
+            />
 
-            {/* Doctor navigation sidebar */}
-            <aside className="doctor-sidebar">
-                <Link
-                    to="/doctor/dashboard"
-                    className="doctor-sidebar-brand"
-                >
-                    <img
-                        src={logo}
-                        alt="Healayra"
-                    />
-
-                    <span>
-                        HEALAYRA
-                    </span>
-                </Link>
-
-                <div className="doctor-profile">
-                    <div className="doctor-avatar">
-                        D
-                    </div>
-
-                    <div>
-                        <strong>
-                            Doctor Workspace
-                        </strong>
-
-                        <span>
-                            {doctorEmail ??
-                                'Επαγγελματίας Υγείας'}
-                        </span>
-                    </div>
-                </div>
-
-                <nav className="doctor-menu">
-                    <Link
-                        to="/doctor/dashboard"
-                        className="doctor-menu-link"
-                    >
-                        <span className="menu-icon">
-                            ⌂
-                        </span>
-
-                        Dashboard
-                    </Link>
-
-                    <Link
-                        to="/doctor/clients"
-                        className="doctor-menu-link active"
-                    >
-                        <span className="menu-icon">
-                            ♙
-                        </span>
-
-                        Θεραπευόμενοι
-                    </Link>
-
-                    <Link
-                        to="/doctor/availability"
-                        className="doctor-menu-link"
-                    >
-                        <span className="menu-icon">
-                            ◷
-                        </span>
-
-                        Διαθεσιμότητα
-                    </Link>
-                </nav>
-
-                <div className="doctor-sidebar-footer">
-                    <button
-                        type="button"
-                        onClick={
-                            handleLogout
-                        }
-                        className="doctor-logout"
-                    >
-                        <span>
-                            ↪
-                        </span>
-
-                        Αποσύνδεση
-                    </button>
-                </div>
-            </aside>
-
-            {/* Client profile and therapy history */}
             <section className="client-details-content">
-
-                {/* Navigation back to the client list */}
+                {/* Navigation back to the complete client list */}
                 <div className="details-breadcrumb">
                     <Link
                         to="/doctor/clients"
@@ -532,11 +576,13 @@ export default function ClientDetails() {
                     </strong>
                 </div>
 
-                {/* Client profile summary */}
+                {/* Client identity and visit summary */}
                 <section className="client-profile-card">
                     <div className="client-profile-main">
                         <div className="client-profile-avatar">
-                            {getInitials()}
+                            {
+                                getInitials()
+                            }
                         </div>
 
                         <div>
@@ -573,7 +619,9 @@ export default function ClientDetails() {
                             </span>
 
                             <strong>
-                                {visits.length}
+                                {
+                                    visits.length
+                                }
                             </strong>
                         </div>
 
@@ -589,7 +637,7 @@ export default function ClientDetails() {
                     </div>
                 </section>
 
-                {/* Therapy history controls */}
+                {/* Therapy history heading and new session action */}
                 <div className="client-history-header">
                     <div>
                         <span className="history-eyebrow">
@@ -626,136 +674,34 @@ export default function ClientDetails() {
                     </button>
                 </div>
 
-                {/* Form for manually adding a new therapy session */}
+                {/* Render the visit creation form only when requested */}
                 {showVisitForm && (
-                    <form
-                        className="new-visit-form"
+                    <NewVisitForm
+                        visitTime={
+                            visitTime
+                        }
+                        service={
+                            service
+                        }
+                        savingVisit={
+                            savingVisit
+                        }
+                        onVisitTimeChange={
+                            setVisitTime
+                        }
+                        onServiceChange={
+                            setService
+                        }
                         onSubmit={
                             handleCreateVisit
                         }
-                    >
-                        <div className="form-heading">
-                            <div>
-                                <span>
-                                    New Session
-                                </span>
-
-                                <h3>
-                                    Καταχώρηση
-                                    Συνεδρίας
-                                </h3>
-                            </div>
-
-                            <button
-                                type="button"
-                                className="form-close"
-                                onClick={() => {
-                                    setShowVisitForm(
-                                        false,
-                                    )
-
-                                    setVisitTime(
-                                        '',
-                                    )
-
-                                    setService(
-                                        '',
-                                    )
-                                }}
-                                aria-label="Κλείσιμο"
-                            >
-                                ×
-                            </button>
-                        </div>
-
-                        <div className="visit-form-grid">
-                            <div className="details-form-field">
-                                <label htmlFor="visitTime">
-                                    Ημερομηνία και ώρα
-                                </label>
-
-                                <input
-                                    id="visitTime"
-                                    type="datetime-local"
-                                    value={
-                                        visitTime
-                                    }
-                                    onChange={(
-                                        event,
-                                    ) =>
-                                        setVisitTime(
-                                            event
-                                                .target
-                                                .value,
-                                        )
-                                    }
-                                    required
-                                />
-                            </div>
-
-                            <div className="details-form-field">
-                                <label htmlFor="service">
-                                    Τύπος συνεδρίας
-                                </label>
-
-                                <input
-                                    id="service"
-                                    type="text"
-                                    placeholder="π.χ. Ατομική Συνεδρία"
-                                    value={
-                                        service
-                                    }
-                                    onChange={(
-                                        event,
-                                    ) =>
-                                        setService(
-                                            event
-                                                .target
-                                                .value,
-                                        )
-                                    }
-                                    required
-                                />
-                            </div>
-                        </div>
-
-                        <div className="details-form-actions">
-                            <button
-                                type="button"
-                                className="details-cancel-button"
-                                onClick={() => {
-                                    setShowVisitForm(
-                                        false,
-                                    )
-
-                                    setVisitTime(
-                                        '',
-                                    )
-
-                                    setService(
-                                        '',
-                                    )
-                                }}
-                            >
-                                Ακύρωση
-                            </button>
-
-                            <button
-                                type="submit"
-                                className="details-save-button"
-                                disabled={
-                                    savingVisit
-                                }
-                            >
-                                {savingVisit
-                                    ? 'Αποθήκευση...'
-                                    : 'Αποθήκευση Συνεδρίας'}
-                            </button>
-                        </div>
-                    </form>
+                        onCancel={
+                            handleCancelVisitForm
+                        }
+                    />
                 )}
 
-                {/* Request errors that occur after the client has already loaded */}
+                {/* Display request errors without replacing the loaded client page */}
                 {error && (
                     <div
                         className="client-details-alert"
@@ -765,243 +711,36 @@ export default function ClientDetails() {
                     </div>
                 )}
 
-                {/* Complete visit history for this client */}
-                <section className="client-history">
-                    {visits.length ===
-                    0 ? (
-                        <div className="history-empty">
-                            <div className="history-empty-icon">
-                                ◷
-                            </div>
-
-                            <h3>
-                                Δεν υπάρχουν
-                                συνεδρίες
-                            </h3>
-
-                            <p>
-                                Η πρώτη συνεδρία
-                                μπορεί να προστεθεί
-                                από το κουμπί
-                                «Νέα Συνεδρία».
-                            </p>
-                        </div>
-                    ) : (
-                        <div className="visit-list">
-                            {visits.map(
-                                (
-                                    visit,
-                                    index,
-                                ) => {
-                                    // Retrieve only the notes that belong to this visit.
-                                    const visitNotes =
-                                        notesByVisit[
-                                            visit.id
-                                            ] ?? []
-
-                                    return (
-                                        <article
-                                            key={
-                                                visit.id
-                                            }
-                                            className="visit-card"
-                                        >
-                                            {/* Timeline numbering follows the visit list order */}
-                                            <div className="visit-timeline">
-                                                <div className="visit-number">
-                                                    {
-                                                        visits.length -
-                                                        index
-                                                    }
-                                                </div>
-
-                                                <div className="visit-timeline-line" />
-                                            </div>
-
-                                            <div className="visit-card-content">
-                                                <header className="visit-header">
-                                                    <div>
-                                                        <span className="visit-date">
-                                                            {formatVisitDate(
-                                                                visit.visitTime,
-                                                            )}
-                                                        </span>
-
-                                                        <h3>
-                                                            {
-                                                                visit.service
-                                                            }
-                                                        </h3>
-                                                    </div>
-
-                                                    <button
-                                                        type="button"
-                                                        className="add-note-button"
-                                                        onClick={() => {
-                                                            // Open the note form only for this specific visit.
-                                                            setActiveNoteVisitId(
-                                                                visit.id,
-                                                            )
-
-                                                            setNoteText(
-                                                                '',
-                                                            )
-                                                        }}
-                                                    >
-                                                        <span>
-                                                            +
-                                                        </span>
-
-                                                        Σημείωση
-                                                    </button>
-                                                </header>
-
-                                                {/* Only one visit note form is active at a time */}
-                                                {activeNoteVisitId ===
-                                                    visit.id && (
-                                                        <form
-                                                            className="new-note-form"
-                                                            onSubmit={(
-                                                                event,
-                                                            ) =>
-                                                                handleCreateNote(
-                                                                    event,
-                                                                    visit.id,
-                                                                )
-                                                            }
-                                                        >
-                                                            <div className="note-form-heading">
-                                                                <div>
-                                                                    <span>
-                                                                        PRIVATE
-                                                                        NOTE
-                                                                    </span>
-
-                                                                    <h4>
-                                                                        Νέα
-                                                                        θεραπευτική
-                                                                        σημείωση
-                                                                    </h4>
-                                                                </div>
-                                                            </div>
-
-                                                            <textarea
-                                                                rows={
-                                                                    5
-                                                                }
-                                                                placeholder="Γράψτε τη σημείωση για τη συνεδρία..."
-                                                                value={
-                                                                    noteText
-                                                                }
-                                                                onChange={(
-                                                                    event,
-                                                                ) =>
-                                                                    setNoteText(
-                                                                        event
-                                                                            .target
-                                                                            .value,
-                                                                    )
-                                                                }
-                                                                required
-                                                            />
-
-                                                            <div className="details-form-actions">
-                                                                <button
-                                                                    type="button"
-                                                                    className="details-cancel-button"
-                                                                    onClick={() => {
-                                                                        setActiveNoteVisitId(
-                                                                            null,
-                                                                        )
-
-                                                                        setNoteText(
-                                                                            '',
-                                                                        )
-                                                                    }}
-                                                                >
-                                                                    Ακύρωση
-                                                                </button>
-
-                                                                <button
-                                                                    type="submit"
-                                                                    className="details-save-button"
-                                                                    disabled={
-                                                                        savingNote
-                                                                    }
-                                                                >
-                                                                    {savingNote
-                                                                        ? 'Αποθήκευση...'
-                                                                        : 'Αποθήκευση Σημείωσης'}
-                                                                </button>
-                                                            </div>
-                                                        </form>
-                                                    )}
-
-                                                {/* Notes stored for the current visit */}
-                                                <div className="visit-notes-section">
-                                                    <div className="visit-notes-heading">
-                                                        <span>
-                                                            Σημειώσεις
-                                                        </span>
-
-                                                        <span className="notes-count">
-                                                            {
-                                                                visitNotes.length
-                                                            }
-                                                        </span>
-                                                    </div>
-
-                                                    {visitNotes.length ===
-                                                    0 ? (
-                                                        <div className="no-visit-notes">
-                                                            Δεν υπάρχουν
-                                                            σημειώσεις
-                                                            για αυτή τη
-                                                            συνεδρία.
-                                                        </div>
-                                                    ) : (
-                                                        <div className="visit-notes-list">
-                                                            {visitNotes.map(
-                                                                (
-                                                                    note,
-                                                                ) => (
-                                                                    <div
-                                                                        key={
-                                                                            note.id
-                                                                        }
-                                                                        className="visit-note"
-                                                                    >
-                                                                        <div className="note-mark">
-                                                                            “
-                                                                        </div>
-
-                                                                        <div>
-                                                                            <p>
-                                                                                {
-                                                                                    note.content
-                                                                                }
-                                                                            </p>
-
-                                                                            <small>
-                                                                                {formatNoteDate(
-                                                                                    note.createdAt,
-                                                                                )}
-                                                                            </small>
-                                                                        </div>
-                                                                    </div>
-                                                                ),
-                                                            )}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </article>
-                                    )
-                                },
-                            )}
-                        </div>
-                    )}
-                </section>
+                {/* VisitHistory owns the presentation of visits and their notes */}
+                <VisitHistory
+                    visits={
+                        visits
+                    }
+                    notesByVisit={
+                        notesByVisit
+                    }
+                    activeNoteVisitId={
+                        activeNoteVisitId
+                    }
+                    noteText={
+                        noteText
+                    }
+                    savingNote={
+                        savingNote
+                    }
+                    onOpenNoteForm={
+                        handleOpenNoteForm
+                    }
+                    onCloseNoteForm={
+                        handleCloseNoteForm
+                    }
+                    onNoteTextChange={
+                        setNoteText
+                    }
+                    onCreateNote={
+                        handleCreateNote
+                    }
+                />
             </section>
         </main>
     )

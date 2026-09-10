@@ -8,7 +8,11 @@ import {
     useNavigate,
 } from 'react-router-dom'
 
-import logo from '../assets/healayra-logo.png'
+import logo
+    from '../assets/healayra-logo.png'
+
+import DashboardContent
+    from '../components/dashboard/DashboardContent'
 
 import {
     getDoctorByUserId,
@@ -29,7 +33,6 @@ import {
 
 import type {
     Appointment,
-    AppointmentStatus,
 } from '../types/Appointment'
 
 import type {
@@ -43,93 +46,136 @@ import type {
 import '../styles/DoctorDashboard.css'
 
 export default function DoctorDashboard() {
-    const navigate = useNavigate()
+    const navigate =
+        useNavigate()
 
-    const [doctor, setDoctor] =
-        useState<Doctor | null>(null)
+    const [
+        doctor,
+        setDoctor,
+    ] =
+        useState<Doctor | null>(
+            null,
+        )
 
-    const [appointments, setAppointments] =
+    const [
+        appointments,
+        setAppointments,
+    ] =
         useState<Appointment[]>([])
 
-    const [clients, setClients] =
+    const [
+        clients,
+        setClients,
+    ] =
         useState<Client[]>([])
 
-    const [loading, setLoading] =
+    const [
+        loading,
+        setLoading,
+    ] =
         useState(true)
 
-    const [error, setError] =
+    const [
+        error,
+        setError,
+    ] =
         useState('')
 
     const [
         updatingAppointmentId,
         setUpdatingAppointmentId,
-    ] = useState<number | null>(null)
+    ] =
+        useState<number | null>(
+            null,
+        )
 
-    // Load the doctor's dashboard data when the page is first rendered.
+    // Store one stable timestamp so dashboard calculations remain pure during render.
+    const [
+        currentTimestamp,
+        setCurrentTimestamp,
+    ] =
+        useState(0)
+
+    // Load the authenticated doctor's profile, appointments and clients.
     useEffect(() => {
+        async function loadDashboard() {
+            // Use the authenticated user's ID to resolve the linked doctor profile.
+            const userId =
+                localStorage.getItem(
+                    'userId',
+                )
+
+            if (!userId) {
+                setError(
+                    'Δεν βρέθηκαν στοιχεία συνδεδεμένου γιατρού.',
+                )
+
+                setLoading(
+                    false,
+                )
+
+                return
+            }
+
+            try {
+                // Convert the authenticated user account into its doctor profile.
+                const doctorData =
+                    await getDoctorByUserId(
+                        Number(userId),
+                    )
+
+                // Load appointments and clients in parallel to reduce waiting time.
+                const [
+                    appointmentsData,
+                    clientsData,
+                ] =
+                    await Promise.all([
+                        getAppointmentsByDoctor(
+                            doctorData.id,
+                        ),
+
+                        getClients(),
+                    ])
+
+                setDoctor(
+                    doctorData,
+                )
+
+                setAppointments(
+                    appointmentsData,
+                )
+
+                setClients(
+                    clientsData,
+                )
+
+                // Capture the clock outside render for future appointment comparisons.
+                setCurrentTimestamp(
+                    Date.now(),
+                )
+            } catch (error) {
+                if (
+                    error instanceof Error
+                ) {
+                    setError(
+                        error.message,
+                    )
+                } else {
+                    setError(
+                        'Δεν ήταν δυνατή η φόρτωση του dashboard.',
+                    )
+                }
+            } finally {
+                setLoading(
+                    false,
+                )
+            }
+        }
+
         loadDashboard()
     }, [])
 
-    // Load the authenticated doctor's profile, appointments and clients.
-    async function loadDashboard() {
-        // Use the authenticated user's ID to resolve the doctor profile.
-        const userId =
-            localStorage.getItem('userId')
-
-        if (!userId) {
-            setError(
-                'Δεν βρέθηκαν στοιχεία συνδεδεμένου γιατρού.',
-            )
-
-            setLoading(false)
-
-            return
-        }
-
-        setLoading(true)
-        setError('')
-
-        try {
-            // Convert the logged-in user account into its linked doctor profile.
-            const doctorData =
-                await getDoctorByUserId(
-                    Number(userId),
-                )
-
-            setDoctor(doctorData)
-
-            // Load appointments and clients in parallel to reduce waiting time.
-            const [
-                appointmentsData,
-                clientsData,
-            ] = await Promise.all([
-                getAppointmentsByDoctor(
-                    doctorData.id,
-                ),
-                getClients(),
-            ])
-
-            setAppointments(
-                appointmentsData,
-            )
-
-            setClients(
-                clientsData,
-            )
-        } catch (error) {
-            if (error instanceof Error) {
-                setError(error.message)
-            } else {
-                setError(
-                    'Δεν ήταν δυνατή η φόρτωση του dashboard.',
-                )
-            }
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    // Confirm a pending appointment and update it in the local dashboard state.
+    // Confirm a pending appointment and replace only the updated local record.
     async function handleConfirmAppointment(
         appointmentId: number,
     ) {
@@ -146,11 +192,14 @@ export default function DoctorDashboard() {
                     'CONFIRMED',
                 )
 
-            // Replace only the appointment returned by the backend.
             setAppointments(
-                (currentAppointments) =>
+                (
+                    currentAppointments,
+                ) =>
                     currentAppointments.map(
-                        (appointment) =>
+                        (
+                            appointment,
+                        ) =>
                             appointment.id ===
                             appointmentId
                                 ? updatedAppointment
@@ -158,8 +207,12 @@ export default function DoctorDashboard() {
                     ),
             )
         } catch (error) {
-            if (error instanceof Error) {
-                setError(error.message)
+            if (
+                error instanceof Error
+            ) {
+                setError(
+                    error.message,
+                )
             } else {
                 setError(
                     'Δεν ήταν δυνατή η επιβεβαίωση του ραντεβού.',
@@ -172,178 +225,14 @@ export default function DoctorDashboard() {
         }
     }
 
-    // Clear authentication data and redirect to the login page.
+    // Clear authentication data and return to the login page.
     function handleLogout() {
         logout()
-        navigate('/login')
-    }
 
-    // Build today's date in YYYY-MM-DD format for appointment comparison.
-    function getTodayDate(): string {
-        const now = new Date()
-
-        const year =
-            now.getFullYear()
-
-        const month =
-            String(
-                now.getMonth() + 1,
-            ).padStart(2, '0')
-
-        const day =
-            String(
-                now.getDate(),
-            ).padStart(2, '0')
-
-        return `${year}-${month}-${day}`
-    }
-
-    // Resolve a client ID to the full name displayed in appointment cards.
-    function getClientName(
-        clientId: number,
-    ): string {
-        const client =
-            clients.find(
-                (client) =>
-                    client.id === clientId,
-            )
-
-        if (!client) {
-            return 'Άγνωστος θεραπευόμενος'
-        }
-
-        return `${client.firstName} ${client.lastName}`
-    }
-
-    function formatDate(
-        appointmentTime: string,
-    ): string {
-        return new Date(
-            appointmentTime,
-        ).toLocaleDateString(
-            'el-GR',
-            {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric',
-            },
+        navigate(
+            '/login',
         )
     }
-
-    function formatTime(
-        appointmentTime: string,
-    ): string {
-        return new Date(
-            appointmentTime,
-        ).toLocaleTimeString(
-            'el-GR',
-            {
-                hour: '2-digit',
-                minute: '2-digit',
-            },
-        )
-    }
-
-    // Convert backend appointment statuses into user-friendly Greek labels.
-    function getStatusLabel(
-        status: AppointmentStatus,
-    ): string {
-        switch (status) {
-            case 'PENDING':
-                return 'ΝΕΟ ΑΙΤΗΜΑ'
-
-            case 'CONFIRMED':
-                return 'ΕΠΙΒΕΒΑΙΩΜΕΝΟ'
-
-            case 'COMPLETED':
-                return 'ΟΛΟΚΛΗΡΩΜΕΝΟ'
-
-            case 'CANCELLED':
-                return 'ΑΚΥΡΩΜΕΝΟ'
-        }
-    }
-
-    // Map appointment statuses to their corresponding CSS classes.
-    function getStatusClass(
-        status: AppointmentStatus,
-    ): string {
-        switch (status) {
-            case 'PENDING':
-                return 'status-pending'
-
-            case 'CONFIRMED':
-                return 'status-confirmed'
-
-            case 'COMPLETED':
-                return 'status-completed'
-
-            case 'CANCELLED':
-                return 'status-cancelled'
-        }
-    }
-
-    const today =
-        getTodayDate()
-
-    // Keep only pending requests and show the earliest appointment first.
-    const pendingAppointments =
-        appointments
-            .filter(
-                (appointment) =>
-                    appointment.status ===
-                    'PENDING',
-            )
-            .sort(
-                (first, second) =>
-                    new Date(
-                        first.appointmentTime,
-                    ).getTime() -
-                    new Date(
-                        second.appointmentTime,
-                    ).getTime(),
-            )
-
-    // Select today's appointments and sort them chronologically.
-    const todayAppointments =
-        appointments
-            .filter(
-                (appointment) =>
-                    appointment.appointmentTime
-                        .split('T')[0] === today,
-            )
-            .sort(
-                (first, second) =>
-                    new Date(
-                        first.appointmentTime,
-                    ).getTime() -
-                    new Date(
-                        second.appointmentTime,
-                    ).getTime(),
-            )
-
-    // Find the nearest future appointment that is still active.
-    const nextAppointment =
-        appointments
-            .filter(
-                (appointment) =>
-                    appointment.status !==
-                    'CANCELLED' &&
-                    appointment.status !==
-                    'COMPLETED' &&
-                    new Date(
-                        appointment.appointmentTime,
-                    ).getTime() >=
-                    Date.now(),
-            )
-            .sort(
-                (first, second) =>
-                    new Date(
-                        first.appointmentTime,
-                    ).getTime() -
-                    new Date(
-                        second.appointmentTime,
-                    ).getTime(),
-            )[0]
 
     if (loading) {
         return (
@@ -362,7 +251,7 @@ export default function DoctorDashboard() {
         )
     }
 
-    // Show a full-page error only when no dashboard data is available.
+    // Show a full-page error only when no dashboard appointment data is available.
     if (
         error &&
         appointments.length === 0
@@ -389,7 +278,6 @@ export default function DoctorDashboard() {
 
     return (
         <main className="doctor-dashboard-page">
-
             {/* Doctor navigation sidebar */}
             <aside className="doctor-sidebar">
                 <Link
@@ -402,15 +290,18 @@ export default function DoctorDashboard() {
                     />
 
                     <span>
-              HEALAYRA
-            </span>
+                        HEALAYRA
+                    </span>
                 </Link>
 
+                {/* Display the authenticated doctor's profile */}
                 <div className="doctor-profile">
                     <div className="doctor-avatar">
-                        {doctor?.firstName
-                            ?.charAt(0)
-                            .toUpperCase() ?? 'D'}
+                        {doctor
+                                ?.firstName
+                                ?.charAt(0)
+                                .toUpperCase() ??
+                            'D'}
                     </div>
 
                     <div>
@@ -421,20 +312,22 @@ export default function DoctorDashboard() {
                         </strong>
 
                         <span>
-                {doctor?.specialty ||
-                    'Επαγγελματίας Υγείας'}
-              </span>
+                            {doctor
+                                    ?.specialty ||
+                                'Επαγγελματίας Υγείας'}
+                        </span>
                     </div>
                 </div>
 
+                {/* Main navigation for the doctor workspace */}
                 <nav className="doctor-menu">
                     <Link
                         to="/doctor/dashboard"
                         className="doctor-menu-link active"
                     >
-              <span className="menu-icon">
-                ⌂
-              </span>
+                        <span className="menu-icon">
+                            ⌂
+                        </span>
 
                         Dashboard
                     </Link>
@@ -443,9 +336,9 @@ export default function DoctorDashboard() {
                         to="/doctor/clients"
                         className="doctor-menu-link"
                     >
-              <span className="menu-icon">
-                ♙
-              </span>
+                        <span className="menu-icon">
+                            ♙
+                        </span>
 
                         Θεραπευόμενοι
                     </Link>
@@ -454,9 +347,9 @@ export default function DoctorDashboard() {
                         to="/doctor/availability"
                         className="doctor-menu-link"
                     >
-              <span className="menu-icon">
-                ◷
-              </span>
+                        <span className="menu-icon">
+                            ◷
+                        </span>
 
                         Διαθεσιμότητα
                     </Link>
@@ -465,415 +358,44 @@ export default function DoctorDashboard() {
                 <div className="doctor-sidebar-footer">
                     <button
                         type="button"
-                        onClick={handleLogout}
+                        onClick={
+                            handleLogout
+                        }
                         className="doctor-logout"
                     >
-              <span>
-                ↪
-              </span>
+                        <span>
+                            ↪
+                        </span>
 
                         Αποσύνδεση
                     </button>
                 </div>
             </aside>
 
-            {/* Main dashboard content */}
-            <section className="doctor-dashboard-content">
-
-                <header className="doctor-dashboard-header">
-                    <div>
-              <span className="dashboard-eyebrow">
-                Doctor Workspace
-              </span>
-
-                        <h1>
-                            Καλησπέρα
-                            {doctor
-                                ? `, ${doctor.firstName}`
-                                : ''}
-                            .
-                        </h1>
-
-                        <p>
-                            Δείτε τι χρειάζεται την
-                            προσοχή σας σήμερα.
-                        </p>
-                    </div>
-
-                    <div className="dashboard-header-date">
-              <span>
-                Σήμερα
-              </span>
-
-                        <strong>
-                            {new Date().toLocaleDateString(
-                                'el-GR',
-                                {
-                                    weekday: 'long',
-                                    day: 'numeric',
-                                    month: 'long',
-                                },
-                            )}
-                        </strong>
-                    </div>
-                </header>
-
-                {/* Dashboard summary statistics */}
-                <section className="dashboard-stats">
-                    <article className="dashboard-stat-card">
-                        <div className="dashboard-stat-top">
-                <span className="dashboard-stat-icon">
-                  ◷
-                </span>
-
-                            <span className="dashboard-stat-label">
-                  Σημερινά Ραντεβού
-                </span>
-                        </div>
-
-                        <strong className="dashboard-stat-value">
-                            {todayAppointments.length}
-                        </strong>
-
-                        <small>
-                            Προγραμματισμένα για σήμερα
-                        </small>
-                    </article>
-
-                    <article className="dashboard-stat-card">
-                        <div className="dashboard-stat-top">
-                <span className="dashboard-stat-icon">
-                  ♙
-                </span>
-
-                            <span className="dashboard-stat-label">
-                  Θεραπευόμενοι
-                </span>
-                        </div>
-
-                        <strong className="dashboard-stat-value">
-                            {clients.length}
-                        </strong>
-
-                        <small>
-                            Σύνολο ενεργών προφίλ
-                        </small>
-                    </article>
-
-                    <article className="dashboard-stat-card">
-                        <div className="dashboard-stat-top">
-                <span className="dashboard-stat-icon">
-                  +
-                </span>
-
-                            <span className="dashboard-stat-label">
-                  Νέα Αιτήματα
-                </span>
-                        </div>
-
-                        <strong className="dashboard-stat-value">
-                            {pendingAppointments.length}
-                        </strong>
-
-                        <small>
-                            Αναμένουν επιβεβαίωση
-                        </small>
-                    </article>
-
-                    <article className="dashboard-stat-card dashboard-stat-highlight">
-                        <div className="dashboard-stat-top">
-                <span className="dashboard-stat-icon">
-                  →
-                </span>
-
-                            <span className="dashboard-stat-label">
-                  Επόμενο Ραντεβού
-                </span>
-                        </div>
-
-                        <strong className="dashboard-stat-value">
-                            {nextAppointment
-                                ? formatTime(
-                                    nextAppointment
-                                        .appointmentTime,
-                                )
-                                : '—'}
-                        </strong>
-
-                        <small>
-                            {nextAppointment
-                                ? getClientName(
-                                    nextAppointment.clientId,
-                                )
-                                : 'Δεν υπάρχει επόμενο ραντεβού'}
-                        </small>
-                    </article>
-                </section>
-
-                {error && (
-                    <div
-                        className="dashboard-alert"
-                        role="alert"
-                    >
-                        {error}
-                    </div>
-                )}
-
-                <div className="dashboard-main-grid">
-
-                    {/* Pending appointment requests */}
-                    <section className="dashboard-panel dashboard-requests-panel">
-                        <div className="dashboard-panel-header">
-                            <div>
-                  <span className="dashboard-panel-kicker">
-                    Requests
-                  </span>
-
-                                <h2>
-                                    Αιτήματα Ραντεβού
-                                </h2>
-                            </div>
-
-                            <span className="dashboard-count">
-                  {pendingAppointments.length}
-                </span>
-                        </div>
-
-                        {pendingAppointments.length === 0 ? (
-                            <div className="dashboard-empty">
-                                <div className="dashboard-empty-icon">
-                                    ✓
-                                </div>
-
-                                <strong>
-                                    Όλα τακτοποιημένα
-                                </strong>
-
-                                <p>
-                                    Δεν υπάρχουν νέα αιτήματα
-                                    αυτή τη στιγμή.
-                                </p>
-                            </div>
-                        ) : (
-                            <div className="dashboard-appointments">
-                                {pendingAppointments.map(
-                                    (appointment) => (
-                                        <article
-                                            key={
-                                                appointment.id
-                                            }
-                                            className="dashboard-appointment-card"
-                                        >
-                                            <div className="appointment-person">
-                                                <div className="appointment-avatar">
-                                                    {getClientName(
-                                                        appointment.clientId,
-                                                    )
-                                                        .charAt(0)
-                                                        .toUpperCase()}
-                                                </div>
-
-                                                <div>
-                                                    <h3>
-                                                        {getClientName(
-                                                            appointment.clientId,
-                                                        )}
-                                                    </h3>
-
-                                                    <p>
-                                                        {formatDate(
-                                                            appointment
-                                                                .appointmentTime,
-                                                        )}
-                                                        {' · '}
-                                                        {formatTime(
-                                                            appointment
-                                                                .appointmentTime,
-                                                        )}
-                                                    </p>
-                                                </div>
-                                            </div>
-
-                                            <div className="appointment-meta">
-                                <span
-                                    className={`appointment-status ${getStatusClass(
-                                        appointment.status,
-                                    )}`}
-                                >
-                                  {getStatusLabel(
-                                      appointment.status,
-                                  )}
-                                </span>
-
-                                                <button
-                                                    type="button"
-                                                    className="confirm-appointment-button"
-                                                    onClick={() =>
-                                                        handleConfirmAppointment(
-                                                            appointment.id,
-                                                        )
-                                                    }
-                                                    disabled={
-                                                        updatingAppointmentId ===
-                                                        appointment.id
-                                                    }
-                                                >
-                                                    {updatingAppointmentId ===
-                                                    appointment.id
-                                                        ? 'Επιβεβαίωση...'
-                                                        : 'Επιβεβαίωση'}
-                                                </button>
-                                            </div>
-                                        </article>
-                                    ),
-                                )}
-                            </div>
-                        )}
-                    </section>
-
-                    {/* Today's appointment schedule */}
-                    <section className="dashboard-panel dashboard-today-panel">
-                        <div className="dashboard-panel-header">
-                            <div>
-                  <span className="dashboard-panel-kicker">
-                    Today
-                  </span>
-
-                                <h2>
-                                    Σημερινό Πρόγραμμα
-                                </h2>
-                            </div>
-                        </div>
-
-                        {todayAppointments.length === 0 ? (
-                            <div className="dashboard-empty">
-                                <div className="dashboard-empty-icon">
-                                    ◷
-                                </div>
-
-                                <strong>
-                                    Ελεύθερο πρόγραμμα
-                                </strong>
-
-                                <p>
-                                    Δεν υπάρχουν ραντεβού για
-                                    σήμερα.
-                                </p>
-                            </div>
-                        ) : (
-                            <div className="today-schedule">
-                                {todayAppointments.map(
-                                    (appointment) => (
-                                        <article
-                                            key={
-                                                appointment.id
-                                            }
-                                            className="today-schedule-item"
-                                        >
-                                            <div className="schedule-time">
-                                                {formatTime(
-                                                    appointment
-                                                        .appointmentTime,
-                                                )}
-                                            </div>
-
-                                            <div className="schedule-line">
-                                                <span />
-                                            </div>
-
-                                            <div className="schedule-details">
-                                                <strong>
-                                                    {getClientName(
-                                                        appointment.clientId,
-                                                    )}
-                                                </strong>
-
-                                                <span>
-                                  Θεραπευτική
-                                  συνεδρία
-                                </span>
-
-                                                <span
-                                                    className={`appointment-status ${getStatusClass(
-                                                        appointment.status,
-                                                    )}`}
-                                                >
-                                  {getStatusLabel(
-                                      appointment.status,
-                                  )}
-                                </span>
-                                            </div>
-                                        </article>
-                                    ),
-                                )}
-                            </div>
-                        )}
-                    </section>
-                </div>
-
-                {/* Quick navigation to the most common doctor actions */}
-                <section className="dashboard-quick-actions">
-                    <div>
-              <span className="dashboard-panel-kicker">
-                Quick Actions
-              </span>
-
-                        <h2>
-                            Γρήγορη Πρόσβαση
-                        </h2>
-                    </div>
-
-                    <div className="quick-actions-grid">
-                        <Link
-                            to="/doctor/clients"
-                            className="quick-action-card"
-                        >
-                <span className="quick-action-icon">
-                  ♙
-                </span>
-
-                            <div>
-                                <strong>
-                                    Θεραπευόμενοι
-                                </strong>
-
-                                <span>
-                    Προβολή και διαχείριση
-                    προφίλ
-                  </span>
-                            </div>
-
-                            <span className="quick-action-arrow">
-                  →
-                </span>
-                        </Link>
-
-                        <Link
-                            to="/doctor/availability"
-                            className="quick-action-card"
-                        >
-                <span className="quick-action-icon">
-                  ◷
-                </span>
-
-                            <div>
-                                <strong>
-                                    Διαθεσιμότητα
-                                </strong>
-
-                                <span>
-                    Ρύθμιση εβδομαδιαίου
-                    προγράμματος
-                  </span>
-                            </div>
-
-                            <span className="quick-action-arrow">
-                  →
-                </span>
-                        </Link>
-                    </div>
-                </section>
-            </section>
+            {/* DashboardContent owns dashboard calculations and presentation */}
+            <DashboardContent
+                doctor={
+                    doctor
+                }
+                appointments={
+                    appointments
+                }
+                clients={
+                    clients
+                }
+                error={
+                    error
+                }
+                updatingAppointmentId={
+                    updatingAppointmentId
+                }
+                currentTimestamp={
+                    currentTimestamp
+                }
+                onConfirmAppointment={
+                    handleConfirmAppointment
+                }
+            />
         </main>
     )
 }

@@ -6,7 +6,7 @@ import {
 
 import './styles/App.css'
 
-import ProtectedRoute from './components/ProtectedRoute'
+import ProtectedRoute from './components/shared/ProtectedRoute'
 
 import Home from './pages/Home'
 import Availability from './pages/Availability'

@@ -4,9 +4,9 @@ import { Navigate } from 'react-router-dom'
 import {
     getRole,
     isAuthenticated,
-} from '../services/AuthService'
+} from '../../services/AuthService'
 
-import type { Role } from '../types/Auth'
+import type { Role } from '../../types/Auth'
 
 interface ProtectedRouteProps {
     children: ReactNode

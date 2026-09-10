@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom'
 
-import heroImage from '../assets/doctor-hero.jpg'
+import heroImage from '../../assets/doctor-hero.jpg'
 
-import '../styles/Hero.css'
+import '../../styles/Hero.css'
 
 export default function Hero() {
     return (

@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom'
 
-import logo from '../assets/healayra-logo.png'
+import logo from '../../assets/healayra-logo.png'
 
-import '../styles/Navbar.css'
+import '../../styles/Navbar.css'
 
 export default function Navbar() {
     return (

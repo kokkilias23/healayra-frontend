@@ -7,17 +7,27 @@ import logo
 
 interface DoctorSidebarProps {
     doctorEmail: string | null
+
     activePage:
         | 'dashboard'
         | 'clients'
         | 'availability'
-    onLogout: () => void
+
+    onLogout:
+        () => void
+
+    doctorName?: string
+    doctorSubtitle?: string
+    avatarText?: string
 }
 
 export default function DoctorSidebar({
                                           doctorEmail,
                                           activePage,
                                           onLogout,
+                                          doctorName,
+                                          doctorSubtitle,
+                                          avatarText,
                                       }: DoctorSidebarProps) {
     // Apply the active class only to the page currently displayed.
     function getMenuLinkClass(
@@ -32,6 +42,20 @@ export default function DoctorSidebar({
                 : ''
         }`
     }
+
+    // Optional profile details let pages display richer doctor information.
+    const profileName =
+        doctorName ??
+        'Doctor Workspace'
+
+    const profileSubtitle =
+        doctorSubtitle ??
+        doctorEmail ??
+        'Επαγγελματίας Υγείας'
+
+    const profileAvatar =
+        avatarText ??
+        'D'
 
     return (
         <aside className="doctor-sidebar">
@@ -53,17 +77,16 @@ export default function DoctorSidebar({
             {/* Display the currently authenticated doctor */}
             <div className="doctor-profile">
                 <div className="doctor-avatar">
-                    D
+                    {profileAvatar}
                 </div>
 
                 <div>
                     <strong>
-                        Doctor Workspace
+                        {profileName}
                     </strong>
 
                     <span>
-                        {doctorEmail ??
-                            'Επαγγελματίας Υγείας'}
+                        {profileSubtitle}
                     </span>
                 </div>
             </div>

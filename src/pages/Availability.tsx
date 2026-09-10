@@ -4,15 +4,20 @@ import {
 } from 'react'
 
 import {
-    Link,
     useNavigate,
 } from 'react-router-dom'
 
 import logo
     from '../assets/healayra-logo.png'
 
-import AvailabilityEditor, {
-    type DayAvailabilityForm,
+import DoctorSidebar
+    from '../components/client-details/DoctorSidebar'
+
+import AvailabilityContent
+    from '../components/availability/AvailabilityContent'
+
+import type {
+    DayAvailabilityForm,
 } from '../components/availability/AvailabilityEditor'
 
 import {
@@ -159,7 +164,6 @@ export default function Availability() {
     // Load the authenticated doctor and weekly availability when the page opens.
     useEffect(() => {
         async function loadAvailability() {
-            // The authenticated account ID is stored locally after login.
             const userId =
                 localStorage.getItem(
                     'userId',
@@ -170,15 +174,13 @@ export default function Availability() {
                     'Δεν βρέθηκαν στοιχεία συνδεδεμένου γιατρού.',
                 )
 
-                setLoading(
-                    false,
-                )
+                setLoading(false)
 
                 return
             }
 
             try {
-                // Convert the authenticated user account into its linked doctor profile.
+                // Resolve the doctor profile connected to the authenticated account.
                 const doctorData =
                     await getDoctorByUserId(
                         Number(userId),
@@ -192,26 +194,23 @@ export default function Availability() {
                     doctorData.id,
                 )
 
-                // Retrieve every saved availability record for this doctor.
+                // Retrieve every persisted availability record for this doctor.
                 const data =
                     await getAvailabilityByDoctor(
                         doctorData.id,
                     )
 
-                // Merge backend records with all seven weekdays so every day remains visible.
+                // Merge backend records with all seven weekdays so every day stays visible.
                 const mergedAvailability =
                     dayDefinitions.map(
                         (day) => {
                             const existing =
                                 data.find(
-                                    (
-                                        item,
-                                    ) =>
+                                    (item) =>
                                         item.dayOfWeek ===
                                         day.dayOfWeek,
                                 )
 
-                            // Days that have never been saved use disabled default working hours.
                             if (!existing) {
                                 return {
                                     ...day,
@@ -262,9 +261,7 @@ export default function Availability() {
                 )
 
                 // Session duration is shared across the doctor's weekly records.
-                if (
-                    data.length > 0
-                ) {
+                if (data.length > 0) {
                     setSessionDuration(
                         data[0]
                             .sessionDuration,
@@ -283,9 +280,7 @@ export default function Availability() {
                     )
                 }
             } finally {
-                setLoading(
-                    false,
-                )
+                setLoading(false)
             }
         }
 
@@ -309,7 +304,6 @@ export default function Availability() {
                         index
                             ? {
                                 ...item,
-
                                 enabled:
                                     !item.enabled,
                             }
@@ -341,7 +335,6 @@ export default function Availability() {
                         index
                             ? {
                                 ...item,
-
                                 [field]:
                                 value,
                             }
@@ -352,7 +345,7 @@ export default function Availability() {
         setSuccess('')
     }
 
-    // Update the shared session duration and mark the current schedule as changed.
+    // Update the shared session duration and mark the schedule as changed.
     function handleSessionDurationChange(
         duration: number,
     ) {
@@ -363,13 +356,12 @@ export default function Availability() {
         setSuccess('')
     }
 
-    // Validate and save the complete weekly availability configuration.
+    // Validate and persist the complete weekly availability configuration.
     async function handleSave() {
         if (!doctorId) {
             return
         }
 
-        // Validate working hours only for weekdays that currently accept appointments.
         const invalidDay =
             availability.find(
                 (item) =>
@@ -395,9 +387,7 @@ export default function Availability() {
             const savedAvailability =
                 await Promise.all(
                     availability.map(
-                        async (
-                            item,
-                        ) => {
+                        async (item) => {
                             // Existing records are updated when a backend ID is already known.
                             if (item.id) {
                                 return updateAvailability(
@@ -417,7 +407,7 @@ export default function Availability() {
                                 )
                             }
 
-                            // Weekdays without an ID have never been persisted and must be created.
+                            // Weekdays without an ID have never been persisted.
                             return createAvailability(
                                 {
                                     doctorId,
@@ -441,7 +431,7 @@ export default function Availability() {
                     ),
                 )
 
-            // Synchronize local IDs, enabled state and times with backend responses.
+            // Synchronize local schedule data with the backend responses.
             setAvailability(
                 (
                     currentAvailability,
@@ -504,9 +494,7 @@ export default function Availability() {
                 )
             }
         } finally {
-            setSaving(
-                false,
-            )
+            setSaving(false)
         }
     }
 
@@ -519,12 +507,10 @@ export default function Availability() {
         )
     }
 
-    // Count enabled weekdays for the summary displayed at the top of the page.
-    const activeDays =
-        availability.filter(
-            (item) =>
-                item.enabled,
-        ).length
+    const doctorEmail =
+        localStorage.getItem(
+            'email',
+        )
 
     if (loading) {
         return (
@@ -543,227 +529,62 @@ export default function Availability() {
 
     return (
         <main className="doctor-dashboard-page">
-            {/* Doctor navigation sidebar */}
-            <aside className="doctor-sidebar">
-                <Link
-                    to="/doctor/dashboard"
-                    className="doctor-sidebar-brand"
-                >
-                    <img
-                        src={logo}
-                        alt="Healayra"
-                    />
+            {/* Reuse the shared doctor navigation while preserving profile details */}
+            <DoctorSidebar
+                doctorEmail={
+                    doctorEmail
+                }
+                activePage="availability"
+                onLogout={
+                    handleLogout
+                }
+                doctorName={
+                    doctor
+                        ? `${doctor.firstName} ${doctor.lastName}`
+                        : undefined
+                }
+                doctorSubtitle={
+                    doctor?.specialty ||
+                    undefined
+                }
+                avatarText={
+                    doctor
+                        ?.firstName
+                        ?.charAt(0)
+                        .toUpperCase() ||
+                    'D'
+                }
+            />
 
-                    <span>
-                        HEALAYRA
-                    </span>
-                </Link>
-
-                {/* Display the authenticated doctor's profile information */}
-                <div className="doctor-profile">
-                    <div className="doctor-avatar">
-                        {doctor
-                                ?.firstName
-                                ?.charAt(0)
-                                .toUpperCase() ??
-                            'D'}
-                    </div>
-
-                    <div>
-                        <strong>
-                            {doctor
-                                ? `${doctor.firstName} ${doctor.lastName}`
-                                : 'Doctor'}
-                        </strong>
-
-                        <span>
-                            {doctor
-                                    ?.specialty ||
-                                'Επαγγελματίας Υγείας'}
-                        </span>
-                    </div>
-                </div>
-
-                <nav className="doctor-menu">
-                    <Link
-                        to="/doctor/dashboard"
-                        className="doctor-menu-link"
-                    >
-                        <span className="menu-icon">
-                            ⌂
-                        </span>
-
-                        Dashboard
-                    </Link>
-
-                    <Link
-                        to="/doctor/clients"
-                        className="doctor-menu-link"
-                    >
-                        <span className="menu-icon">
-                            ♙
-                        </span>
-
-                        Θεραπευόμενοι
-                    </Link>
-
-                    <Link
-                        to="/doctor/availability"
-                        className="doctor-menu-link active"
-                    >
-                        <span className="menu-icon">
-                            ◷
-                        </span>
-
-                        Διαθεσιμότητα
-                    </Link>
-                </nav>
-
-                <div className="doctor-sidebar-footer">
-                    <button
-                        type="button"
-                        onClick={
-                            handleLogout
-                        }
-                        className="doctor-logout"
-                    >
-                        <span>
-                            ↪
-                        </span>
-
-                        Αποσύνδεση
-                    </button>
-                </div>
-            </aside>
-
-            {/* Main availability settings content */}
-            <section className="availability-content">
-                <header className="availability-header">
-                    <div>
-                        <span className="availability-eyebrow">
-                            Schedule Settings
-                        </span>
-
-                        <h1>
-                            Διαθεσιμότητα
-                        </h1>
-
-                        <p>
-                            Ορίστε τις ημέρες και
-                            ώρες στις οποίες μπορούν
-                            να κλείνουν ραντεβού οι
-                            θεραπευόμενοι.
-                        </p>
-                    </div>
-
-                    {/* Quick summary of the current weekly schedule */}
-                    <div className="availability-summary">
-                        <div>
-                            <span>
-                                Ενεργές ημέρες
-                            </span>
-
-                            <strong>
-                                {activeDays}
-                            </strong>
-
-                            <small>
-                                από 7 ημέρες
-                            </small>
-                        </div>
-
-                        <div>
-                            <span>
-                                Συνεδρία
-                            </span>
-
-                            <strong>
-                                {
-                                    sessionDuration
-                                }
-                            </strong>
-
-                            <small>
-                                λεπτά
-                            </small>
-                        </div>
-                    </div>
-                </header>
-
-                {/* AvailabilityEditor owns the complete weekly schedule UI */}
-                <AvailabilityEditor
-                    availability={
-                        availability
-                    }
-                    sessionDuration={
-                        sessionDuration
-                    }
-                    onSessionDurationChange={
-                        handleSessionDurationChange
-                    }
-                    onToggleDay={
-                        handleToggleDay
-                    }
-                    onTimeChange={
-                        handleTimeChange
-                    }
-                />
-
-                {/* Display validation or backend errors without leaving the page */}
-                {error && (
-                    <div
-                        className="availability-alert error"
-                        role="alert"
-                    >
-                        <span>
-                            !
-                        </span>
-
-                        {error}
-                    </div>
-                )}
-
-                {/* Confirm that the latest schedule was successfully persisted */}
-                {success && (
-                    <div className="availability-alert success">
-                        <span>
-                            ✓
-                        </span>
-
-                        {success}
-                    </div>
-                )}
-
-                {/* Persist all current local schedule changes */}
-                <div className="availability-save-bar">
-                    <div>
-                        <strong>
-                            Εβδομαδιαία
-                            διαθεσιμότητα
-                        </strong>
-
-                        <span>
-                            Οι αλλαγές εφαρμόζονται
-                            μετά την αποθήκευση.
-                        </span>
-                    </div>
-
-                    <button
-                        type="button"
-                        className="save-availability-btn"
-                        onClick={
-                            handleSave
-                        }
-                        disabled={
-                            saving
-                        }
-                    >
-                        {saving
-                            ? 'Αποθήκευση...'
-                            : 'Αποθήκευση Αλλαγών'}
-                    </button>
-                </div>
-            </section>
+            <AvailabilityContent
+                availability={
+                    availability
+                }
+                sessionDuration={
+                    sessionDuration
+                }
+                saving={
+                    saving
+                }
+                error={
+                    error
+                }
+                success={
+                    success
+                }
+                onSessionDurationChange={
+                    handleSessionDurationChange
+                }
+                onToggleDay={
+                    handleToggleDay
+                }
+                onTimeChange={
+                    handleTimeChange
+                }
+                onSave={
+                    handleSave
+                }
+            />
         </main>
     )
 }

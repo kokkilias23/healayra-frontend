@@ -1,6 +1,4 @@
-import {
-    Link,
-} from 'react-router-dom'
+import { Link } from 'react-router-dom'
 
 import type {
     Appointment,
@@ -8,12 +6,187 @@ import type {
 } from '../../types/Appointment'
 
 interface AppointmentsContentProps {
-    appointments:
-        Appointment[]
-    error:
-        string
-    currentTimestamp:
-        number
+    appointments: Appointment[]
+    error: string
+    currentTimestamp: number
+}
+
+// Visual configuration used for every backend appointment status.
+const statusDetails: Record<
+    AppointmentStatus,
+    {
+        label: string
+        className: string
+        icon: string
+    }
+> = {
+    PENDING: {
+        label: 'Αναμένει επιβεβαίωση',
+        className: 'status-pending',
+        icon: '◷',
+    },
+    CONFIRMED: {
+        label: 'Επιβεβαιωμένο',
+        className: 'status-confirmed',
+        icon: '✓',
+    },
+    COMPLETED: {
+        label: 'Ολοκληρωμένο',
+        className: 'status-completed',
+        icon: '✓',
+    },
+    CANCELLED: {
+        label: 'Ακυρωμένο',
+        className: 'status-cancelled',
+        icon: '×',
+    },
+}
+
+// Format the full appointment date for the Greek UI.
+function formatDate(
+    appointmentTime: string,
+): string {
+    return new Date(
+        appointmentTime,
+    ).toLocaleDateString(
+        'el-GR',
+        {
+            weekday: 'long',
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric',
+        },
+    )
+}
+
+// Split a date into the compact day and month values used by appointment cards.
+function formatShortDate(
+    appointmentTime: string,
+): {
+    day: string
+    month: string
+} {
+    const date =
+        new Date(
+            appointmentTime,
+        )
+
+    return {
+        day: date.toLocaleDateString(
+            'el-GR',
+            {
+                day: '2-digit',
+            },
+        ),
+
+        month: date.toLocaleDateString(
+            'el-GR',
+            {
+                month: 'short',
+            },
+        ),
+    }
+}
+
+// Format only the appointment time shown throughout the appointment UI.
+function formatTime(
+    appointmentTime: string,
+): string {
+    return new Date(
+        appointmentTime,
+    ).toLocaleTimeString(
+        'el-GR',
+        {
+            hour: '2-digit',
+            minute: '2-digit',
+        },
+    )
+}
+
+// Render the common status badge used by highlighted and listed appointments.
+function AppointmentStatusBadge({
+                                    status,
+                                }: {
+    status: AppointmentStatus
+}) {
+    const details =
+        statusDetails[status]
+
+    return (
+        <span
+            className={`appointment-status ${details.className}`}
+        >
+            <span>
+                {details.icon}
+            </span>
+
+            {details.label}
+        </span>
+    )
+}
+
+// Render one appointment card while allowing the section to control its visual style.
+function AppointmentCard({
+                             appointment,
+                             cardClassName,
+                         }: {
+    appointment: Appointment
+    cardClassName:
+        | 'upcoming-card'
+        | 'history-card'
+}) {
+    const date =
+        formatShortDate(
+            appointment.appointmentTime,
+        )
+
+    return (
+        <article
+            className={`appointment-card ${cardClassName}`}
+        >
+            <div className="appointment-date-block">
+                <strong>
+                    {date.day}
+                </strong>
+
+                <span>
+                    {date.month}
+                </span>
+            </div>
+
+            <div className="appointment-card-main">
+                <span className="appointment-card-label">
+                    {appointment.service}
+                </span>
+
+                <h3>
+                    {formatDate(
+                        appointment.appointmentTime,
+                    )}
+                </h3>
+
+                <div className="appointment-time-row">
+                    <span>
+                        ◷
+                    </span>
+
+                    <strong>
+                        {formatTime(
+                            appointment.appointmentTime,
+                        )}
+                    </strong>
+                </div>
+            </div>
+
+            <div className="appointment-card-status">
+                <AppointmentStatusBadge
+                    status={
+                        appointment.status
+                    }
+                />
+            </div>
+        </article>
+    )
 }
 
 export default function AppointmentsContent({
@@ -21,144 +194,13 @@ export default function AppointmentsContent({
                                                 error,
                                                 currentTimestamp,
                                             }: AppointmentsContentProps) {
-    // Format the full appointment date for the Greek UI.
-    function formatDate(
-        appointmentTime: string,
-    ): string {
-        return new Date(
-            appointmentTime,
-        ).toLocaleDateString(
-            'el-GR',
-            {
-                weekday: 'long',
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric',
-            },
-        )
-    }
-
-    // Split the date into the compact day and month values used by appointment cards.
-    function formatShortDate(
-        appointmentTime: string,
-    ): {
-        day: string
-        month: string
-    } {
-        const date =
-            new Date(
-                appointmentTime,
-            )
-
-        return {
-            day:
-                date.toLocaleDateString(
-                    'el-GR',
-                    {
-                        day:
-                            '2-digit',
-                    },
-                ),
-
-            month:
-                date.toLocaleDateString(
-                    'el-GR',
-                    {
-                        month:
-                            'short',
-                    },
-                ),
-        }
-    }
-
-    // Format only the appointment time shown throughout the appointment list.
-    function formatTime(
-        appointmentTime: string,
-    ): string {
-        return new Date(
-            appointmentTime,
-        ).toLocaleTimeString(
-            'el-GR',
-            {
-                hour:
-                    '2-digit',
-
-                minute:
-                    '2-digit',
-            },
-        )
-    }
-
-    // Convert backend appointment statuses into user-friendly Greek labels.
-    function getStatusLabel(
-        status:
-        AppointmentStatus,
-    ): string {
-        switch (status) {
-            case 'PENDING':
-                return 'Αναμένει επιβεβαίωση'
-
-            case 'CONFIRMED':
-                return 'Επιβεβαιωμένο'
-
-            case 'COMPLETED':
-                return 'Ολοκληρωμένο'
-
-            case 'CANCELLED':
-                return 'Ακυρωμένο'
-        }
-    }
-
-    // Map appointment statuses to the corresponding CSS classes.
-    function getStatusClass(
-        status:
-        AppointmentStatus,
-    ): string {
-        switch (status) {
-            case 'PENDING':
-                return 'status-pending'
-
-            case 'CONFIRMED':
-                return 'status-confirmed'
-
-            case 'COMPLETED':
-                return 'status-completed'
-
-            case 'CANCELLED':
-                return 'status-cancelled'
-        }
-    }
-
-    // Select the small visual icon displayed next to each appointment status.
-    function getStatusIcon(
-        status:
-        AppointmentStatus,
-    ): string {
-        switch (status) {
-            case 'PENDING':
-                return '◷'
-
-            case 'CONFIRMED':
-                return '✓'
-
-            case 'COMPLETED':
-                return '✓'
-
-            case 'CANCELLED':
-                return '×'
-        }
-    }
-
     // Keep only future appointments that are still active.
     const upcomingAppointments =
         [...appointments]
             .filter(
-                (
-                    appointment,
-                ) =>
+                (appointment) =>
                     new Date(
-                        appointment
-                            .appointmentTime,
+                        appointment.appointmentTime,
                     ).getTime() >=
                     currentTimestamp &&
                     appointment.status !==
@@ -168,32 +210,29 @@ export default function AppointmentsContent({
             )
             // Upcoming appointments are displayed from nearest to furthest.
             .sort(
-                (
-                    first,
-                    second,
-                ) =>
+                (first, second) =>
                     new Date(
-                        first
-                            .appointmentTime,
+                        first.appointmentTime,
                     ).getTime() -
                     new Date(
-                        second
-                            .appointmentTime,
+                        second.appointmentTime,
                     ).getTime(),
             )
 
     // Everything outside the active future list belongs to appointment history.
+    const upcomingIds =
+        new Set(
+            upcomingAppointments.map(
+                (appointment) =>
+                    appointment.id,
+            ),
+        )
+
     const previousAppointments =
         appointments.filter(
-            (
-                appointment,
-            ) =>
-                !upcomingAppointments.some(
-                    (
-                        upcoming,
-                    ) =>
-                        upcoming.id ===
-                        appointment.id,
+            (appointment) =>
+                !upcomingIds.has(
+                    appointment.id,
                 ),
         )
 
@@ -203,7 +242,7 @@ export default function AppointmentsContent({
 
     return (
         <section className="appointments-content">
-            {/* Page introduction and shortcut to create a new appointment */}
+            {/* Page introduction and shortcut for creating another appointment */}
             <header className="appointments-header">
                 <div>
                     <span className="appointments-eyebrow">
@@ -234,7 +273,7 @@ export default function AppointmentsContent({
                 </Link>
             </header>
 
-            {/* Display backend request failures without replacing the page */}
+            {/* Display backend failures without replacing the appointment page */}
             {error && (
                 <div
                     className="appointments-alert"
@@ -248,19 +287,18 @@ export default function AppointmentsContent({
                 </div>
             )}
 
-            {/* Highlight the nearest future appointment */}
+            {/* Highlight the nearest active future appointment */}
             {!error &&
                 nextAppointment && (
                     <section className="next-appointment-card">
                         <div className="next-appointment-copy">
-                        <span className="next-label">
-                            Next Appointment
-                        </span>
+                            <span className="next-label">
+                                Next Appointment
+                            </span>
 
                             <h2>
                                 {
-                                    nextAppointment
-                                        .service
+                                    nextAppointment.service
                                 }
                             </h2>
 
@@ -273,9 +311,9 @@ export default function AppointmentsContent({
                         </div>
 
                         <div className="next-appointment-time">
-                        <span>
-                            Ώρα
-                        </span>
+                            <span>
+                                Ώρα
+                            </span>
 
                             <strong>
                                 {formatTime(
@@ -285,21 +323,11 @@ export default function AppointmentsContent({
                             </strong>
                         </div>
 
-                        <span
-                            className={`appointment-status ${getStatusClass(
-                                nextAppointment.status,
-                            )}`}
-                        >
-                        <span>
-                            {getStatusIcon(
-                                nextAppointment.status,
-                            )}
-                        </span>
-
-                            {getStatusLabel(
-                                nextAppointment.status,
-                            )}
-                    </span>
+                        <AppointmentStatusBadge
+                            status={
+                                nextAppointment.status
+                            }
+                        />
                     </section>
                 )}
 
@@ -323,16 +351,14 @@ export default function AppointmentsContent({
                             ραντεβού.
                         </p>
 
-                        <Link
-                            to="/booking"
-                        >
+                        <Link to="/booking">
                             Κλείσιμο πρώτου
                             ραντεβού
                         </Link>
                     </section>
                 )}
 
-            {/* Split existing appointments into upcoming sessions and history */}
+            {/* Display upcoming and historical appointments when records exist */}
             {!error &&
                 appointments.length >
                 0 && (
@@ -340,9 +366,9 @@ export default function AppointmentsContent({
                         <section className="appointments-section">
                             <div className="appointments-section-header">
                                 <div>
-                                <span>
-                                    Upcoming
-                                </span>
+                                    <span>
+                                        Upcoming
+                                    </span>
 
                                     <h2>
                                         Επερχόμενα
@@ -351,8 +377,7 @@ export default function AppointmentsContent({
 
                                 <div className="appointments-count">
                                     {
-                                        upcomingAppointments
-                                            .length
+                                        upcomingAppointments.length
                                     }
                                 </div>
                             </div>
@@ -367,84 +392,17 @@ export default function AppointmentsContent({
                             ) : (
                                 <div className="appointments-list">
                                     {upcomingAppointments.map(
-                                        (
-                                            appointment,
-                                        ) => {
-                                            const date =
-                                                formatShortDate(
+                                        (appointment) => (
+                                            <AppointmentCard
+                                                key={
+                                                    appointment.id
+                                                }
+                                                appointment={
                                                     appointment
-                                                        .appointmentTime,
-                                                )
-
-                                            return (
-                                                <article
-                                                    key={
-                                                        appointment.id
-                                                    }
-                                                    className="appointment-card upcoming-card"
-                                                >
-                                                    <div className="appointment-date-block">
-                                                        <strong>
-                                                            {
-                                                                date.day
-                                                            }
-                                                        </strong>
-
-                                                        <span>
-                                                        {
-                                                            date.month
-                                                        }
-                                                    </span>
-                                                    </div>
-
-                                                    <div className="appointment-card-main">
-                                                    <span className="appointment-card-label">
-                                                        {
-                                                            appointment.service
-                                                        }
-                                                    </span>
-
-                                                        <h3>
-                                                            {formatDate(
-                                                                appointment
-                                                                    .appointmentTime,
-                                                            )}
-                                                        </h3>
-
-                                                        <div className="appointment-time-row">
-                                                        <span>
-                                                            ◷
-                                                        </span>
-
-                                                            <strong>
-                                                                {formatTime(
-                                                                    appointment
-                                                                        .appointmentTime,
-                                                                )}
-                                                            </strong>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="appointment-card-status">
-                                                    <span
-                                                        className={`appointment-status ${getStatusClass(
-                                                            appointment.status,
-                                                        )}`}
-                                                    >
-                                                        <span>
-                                                            {getStatusIcon(
-                                                                appointment.status,
-                                                            )}
-                                                        </span>
-
-                                                        {getStatusLabel(
-                                                            appointment.status,
-                                                        )}
-                                                    </span>
-                                                    </div>
-                                                </article>
-                                            )
-                                        },
+                                                }
+                                                cardClassName="upcoming-card"
+                                            />
+                                        ),
                                     )}
                                 </div>
                             )}
@@ -454,9 +412,9 @@ export default function AppointmentsContent({
                         <section className="appointments-section history-section">
                             <div className="appointments-section-header">
                                 <div>
-                                <span>
-                                    History
-                                </span>
+                                    <span>
+                                        History
+                                    </span>
 
                                     <h2>
                                         Ιστορικό
@@ -465,8 +423,7 @@ export default function AppointmentsContent({
 
                                 <div className="appointments-count">
                                     {
-                                        previousAppointments
-                                            .length
+                                        previousAppointments.length
                                     }
                                 </div>
                             </div>
@@ -481,84 +438,17 @@ export default function AppointmentsContent({
                             ) : (
                                 <div className="appointments-list">
                                     {previousAppointments.map(
-                                        (
-                                            appointment,
-                                        ) => {
-                                            const date =
-                                                formatShortDate(
+                                        (appointment) => (
+                                            <AppointmentCard
+                                                key={
+                                                    appointment.id
+                                                }
+                                                appointment={
                                                     appointment
-                                                        .appointmentTime,
-                                                )
-
-                                            return (
-                                                <article
-                                                    key={
-                                                        appointment.id
-                                                    }
-                                                    className="appointment-card history-card"
-                                                >
-                                                    <div className="appointment-date-block">
-                                                        <strong>
-                                                            {
-                                                                date.day
-                                                            }
-                                                        </strong>
-
-                                                        <span>
-                                                        {
-                                                            date.month
-                                                        }
-                                                    </span>
-                                                    </div>
-
-                                                    <div className="appointment-card-main">
-                                                    <span className="appointment-card-label">
-                                                        {
-                                                            appointment.service
-                                                        }
-                                                    </span>
-
-                                                        <h3>
-                                                            {formatDate(
-                                                                appointment
-                                                                    .appointmentTime,
-                                                            )}
-                                                        </h3>
-
-                                                        <div className="appointment-time-row">
-                                                        <span>
-                                                            ◷
-                                                        </span>
-
-                                                            <strong>
-                                                                {formatTime(
-                                                                    appointment
-                                                                        .appointmentTime,
-                                                                )}
-                                                            </strong>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="appointment-card-status">
-                                                    <span
-                                                        className={`appointment-status ${getStatusClass(
-                                                            appointment.status,
-                                                        )}`}
-                                                    >
-                                                        <span>
-                                                            {getStatusIcon(
-                                                                appointment.status,
-                                                            )}
-                                                        </span>
-
-                                                        {getStatusLabel(
-                                                            appointment.status,
-                                                        )}
-                                                    </span>
-                                                    </div>
-                                                </article>
-                                            )
-                                        },
+                                                }
+                                                cardClassName="history-card"
+                                            />
+                                        ),
                                     )}
                                 </div>
                             )}
